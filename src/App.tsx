@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { TabBar, type Tab } from './components/TabBar';
 import { ListScreen } from './screens/ListScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import * as db from './db';
-import { expiresAt } from './time';
+import { addDays, expiresAt, todayISO } from './time';
 import {
   DEFAULT_SETTINGS,
+  MAX_DAYS_AHEAD,
   MAX_ITEMS,
   type Backup,
   type Item,
@@ -16,17 +17,25 @@ import {
 
 const THEME_COLOR = { light: '#f2efe7', dark: '#0b0b0c' };
 
+/** Lists keyed by the day they are for. */
+type Lists = Record<string, List>;
+
 export function App() {
   const [tab, setTab] = useState<Tab>('list');
-  const [list, setList] = useState<List | null>(null);
+  const [lists, setLists] = useState<Lists>({});
+  const [cursor, setCursor] = useState(() => todayISO());
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [ready, setReady] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const persisted = useRef<Lists>({});
 
   useEffect(() => {
-    Promise.all([db.getList(), db.getSettings()])
-      .then(([storedList, storedSettings]) => {
-        setList(storedList);
+    Promise.all([db.getLists(), db.getSettings()])
+      .then(([stored, storedSettings]) => {
+        // Seed the persisted snapshot too, so the write effect below sees
+        // nothing changed and does not immediately rewrite what it just read.
+        persisted.current = stored;
+        setLists(stored);
         setSettings(storedSettings);
       })
       .catch(() => {
@@ -36,7 +45,7 @@ export function App() {
   }, []);
 
   /* Screen-level clock: day rollover, pending -> live, expiry. Coarse on
-     purpose — the second hand belongs to <Countdown>, so the whole tree is not
+     purpose — the second hand belongs to <Hud>, so the whole tree is not
      re-rendering underneath an open sheet once a second. Paused when hidden. */
   useEffect(() => {
     let timer: number | undefined;
@@ -61,20 +70,37 @@ export function App() {
     };
   }, []);
 
-  /* Land on the deadline itself rather than up to a poll late. */
+  /* Land on the next deadline itself rather than up to a poll late. */
   useEffect(() => {
-    if (!list) return;
-    const delay = expiresAt(list) - Date.now();
-    if (delay <= 0 || delay > 2_147_483_000) return;
+    const upcoming = Object.values(lists)
+      .map(expiresAt)
+      .filter((at) => at > Date.now());
+    if (upcoming.length === 0) return;
+    const delay = Math.min(...upcoming) - Date.now();
+    if (delay > 2_147_483_000) return;
     const timer = setTimeout(() => setNow(Date.now()), delay + 200);
     return () => clearTimeout(timer);
-  }, [list]);
+  }, [lists]);
 
-  /* The whole point of the app: the list deletes itself, finished or not. */
+  /* The whole point of the app: each list deletes itself at its deadline. */
   useEffect(() => {
-    if (!ready || !list || now < expiresAt(list)) return;
-    setList(null);
-  }, [ready, list, now]);
+    if (!ready) return;
+    const dead = Object.values(lists).filter((list) => now >= expiresAt(list));
+    if (dead.length === 0) return;
+    setLists((current) => {
+      const next = { ...current };
+      for (const list of dead) delete next[list.date];
+      return next;
+    });
+  }, [ready, lists, now]);
+
+  /* Keep the viewed day inside today..+7 as the days roll over. */
+  useEffect(() => {
+    const today = todayISO(now);
+    const last = addDays(today, MAX_DAYS_AHEAD);
+    if (cursor < today) setCursor(today);
+    else if (cursor > last) setCursor(last);
+  }, [now, cursor]);
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)');
@@ -90,16 +116,23 @@ export function App() {
     return () => media.removeEventListener('change', apply);
   }, [settings.theme]);
 
-  /* Single write path: whatever `list` becomes is what ends up on disk. */
+  /* Single write path: whatever changed in `lists` is what reaches disk. */
   useEffect(() => {
     if (!ready) return;
-    // Storage can be blocked outright (private mode, locked-down browser); the
-    // app still works for the session, it just will not survive a reload.
-    void (list ? db.putList(list) : db.deleteList()).catch(() => {});
-  }, [ready, list]);
+    const before = persisted.current;
+    for (const [date, list] of Object.entries(lists)) {
+      // Storage can be blocked outright (private mode, locked-down browser);
+      // the app still works for the session, it just will not survive a reload.
+      if (before[date] !== list) void db.putList(list).catch(() => {});
+    }
+    for (const date of Object.keys(before)) {
+      if (!lists[date]) void db.deleteList(date).catch(() => {});
+    }
+    persisted.current = lists;
+  }, [ready, lists]);
 
-  const update = useCallback((fn: (current: List) => List) => {
-    setList((current) => (current ? fn(current) : current));
+  const update = useCallback((date: string, fn: (current: List) => List) => {
+    setLists((current) => (current[date] ? { ...current, [date]: fn(current[date]) } : current));
   }, []);
 
   const saveSettings = useCallback((next: Settings) => {
@@ -107,18 +140,21 @@ export function App() {
     void db.putSettings(next).catch(() => {});
   }, []);
 
-  const onSchedule = (date: string, start: string, deadline: string) =>
-    setList((current) =>
-      current
-        ? { ...current, date, start, deadline }
-        : { id: 'current', date, start, deadline, createdAt: Date.now(), items: [] },
-    );
+  const list = lists[cursor] ?? null;
 
-  const onReorder = (from: number, to: number) =>
-    update((current) => {
-      const items = [...current.items];
-      items.splice(to, 0, ...items.splice(from, 1));
-      return { ...current, items };
+  const onSchedule = (start: string, deadline: string) =>
+    setLists((current) => ({
+      ...current,
+      [cursor]: current[cursor]
+        ? { ...current[cursor], start, deadline }
+        : { date: cursor, start, deadline, createdAt: Date.now(), items: [] },
+    }));
+
+  const onDiscard = () =>
+    setLists((current) => {
+      const next = { ...current };
+      delete next[cursor];
+      return next;
     });
 
   const onAddItem = (name: string, minutes: number) => {
@@ -130,7 +166,7 @@ export function App() {
       doneAt: null,
       createdAt: Date.now(),
     };
-    update((current) =>
+    update(cursor, (current) =>
       current.items.length >= MAX_ITEMS
         ? current
         : { ...current, items: [...current.items, item] },
@@ -143,11 +179,11 @@ export function App() {
   });
 
   const onSaveItem = (id: string, name: string, minutes: number) =>
-    update((current) => mapItems(current, (i) => (i.id === id ? { ...i, name, minutes } : i)));
+    update(cursor, (current) => mapItems(current, (i) => (i.id === id ? { ...i, name, minutes } : i)));
 
   const onToggleItem = (id: string) => {
     const at = Date.now();
-    update((current) =>
+    update(cursor, (current) =>
       mapItems(current, (i) =>
         i.id === id ? { ...i, done: !i.done, doneAt: i.done ? null : at } : i,
       ),
@@ -155,11 +191,19 @@ export function App() {
   };
 
   const onDeleteItem = (id: string) =>
-    update((current) => ({ ...current, items: current.items.filter((i) => i.id !== id) }));
+    update(cursor, (current) => ({ ...current, items: current.items.filter((i) => i.id !== id) }));
+
+  const onReorder = (from: number, to: number) =>
+    update(cursor, (current) => {
+      const items = [...current.items];
+      items.splice(to, 0, ...items.splice(from, 1));
+      return { ...current, items };
+    });
 
   const onRestore = (backup: Backup) => {
     saveSettings(backup.settings);
-    setList(backup.list);
+    setLists(Object.fromEntries(backup.lists.map((l) => [l.date, l])));
+    setCursor(todayISO());
     setTab('list');
   };
 
@@ -169,18 +213,21 @@ export function App() {
         {!ready ? null : tab === 'list' ? (
           <ListScreen
             list={list}
+            date={cursor}
             now={now}
+            planned={new Set(Object.keys(lists))}
+            onPickDay={setCursor}
             onSchedule={onSchedule}
-            onReorder={onReorder}
-            onDiscard={() => setList(null)}
+            onDiscard={onDiscard}
             onAddItem={onAddItem}
             onSaveItem={onSaveItem}
             onToggleItem={onToggleItem}
             onDeleteItem={onDeleteItem}
+            onReorder={onReorder}
           />
         ) : (
           <SettingsScreen
-            list={list}
+            lists={Object.values(lists)}
             settings={settings}
             onTheme={(theme: ThemeMode) => saveSettings({ ...settings, theme })}
             onRestore={onRestore}

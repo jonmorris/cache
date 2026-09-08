@@ -1,7 +1,15 @@
 import { useRef, useState } from 'react';
 import { ConfirmSheet } from '../components/ConfirmSheet';
 import { buildBackup, download, parseBackup } from '../backup';
-import { APP_VERSION, MAX_ITEMS, type Backup, type List, type Settings, type ThemeMode } from '../types';
+import {
+  APP_VERSION,
+  MAX_DAYS_AHEAD,
+  MAX_ITEMS,
+  type Backup,
+  type List,
+  type Settings,
+  type ThemeMode,
+} from '../types';
 
 const THEMES: { id: ThemeMode; label: string }[] = [
   { id: 'system', label: 'System' },
@@ -10,19 +18,19 @@ const THEMES: { id: ThemeMode; label: string }[] = [
 ];
 
 interface SettingsScreenProps {
-  list: List | null;
+  lists: List[];
   settings: Settings;
   onTheme: (theme: ThemeMode) => void;
   onRestore: (backup: Backup) => void;
 }
 
-export function SettingsScreen({ list, settings, onTheme, onRestore }: SettingsScreenProps) {
+export function SettingsScreen({ lists, settings, onTheme, onRestore }: SettingsScreenProps) {
   const [status, setStatus] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
   const [staged, setStaged] = useState<Backup | null>(null);
   const filePicker = useRef<HTMLInputElement>(null);
 
   const exportNow = () => {
-    download(buildBackup(list, settings));
+    download(buildBackup(lists, settings));
     setStatus({ tone: 'ok', text: 'Backup downloaded' });
   };
 
@@ -89,7 +97,8 @@ export function SettingsScreen({ list, settings, onTheme, onRestore }: SettingsS
           <Row label="Storage" value="On device" />
           <Row label="Accounts" value="None" />
           <Row label="Expires" value="At its deadline" />
-          <Row label="Max items" value={String(MAX_ITEMS)} />
+          <Row label="Max items" value={`${MAX_ITEMS} per day`} />
+          <Row label="Horizon" value={`${MAX_DAYS_AHEAD} days ahead`} />
           <Row label="Version" value={APP_VERSION} />
         </div>
       </section>
@@ -101,13 +110,14 @@ export function SettingsScreen({ list, settings, onTheme, onRestore }: SettingsS
           <>
             Replace everything on this device with the backup
             {staged?.exportedAt ? ` from ${staged.exportedAt.slice(0, 10)}` : ''}?{' '}
-            {staged?.list ? (
+            {staged && staged.lists.length > 0 ? (
               <>
-                It holds a list for <strong>{staged.list.date}</strong> with {staged.list.items.length}{' '}
-                {staged.list.items.length === 1 ? 'item' : 'items'}.
+                It holds <strong>{staged.lists.length}</strong>{' '}
+                {staged.lists.length === 1 ? 'list' : 'lists'}, covering{' '}
+                {staged.lists.map((l) => l.date).sort().join(', ')}.
               </>
             ) : (
-              <>It holds no list, so the current one will be cleared.</>
+              <>It holds no lists, so everything here will be cleared.</>
             )}
           </>
         }

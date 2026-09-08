@@ -192,36 +192,90 @@ ul {
   gap: 12px;
 }
 
-.daybtn {
+.daynav {
+  display: grid;
+  gap: 8px;
+}
+
+.daynav-head {
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: 100%;
-  min-height: var(--tap);
-  padding: 8px 12px;
   border: 1px solid var(--rule-strong);
   background: var(--surface);
 }
 
-.daybtn-day {
-  font-size: 16px;
+.daynav-arrow {
+  flex: 0 0 auto;
+  width: 46px;
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.daynav-arrow:disabled {
+  color: var(--rule-strong);
+}
+
+.daynav-label {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.daynav-day {
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
-.daybtn-date {
-  flex: 1 1 auto;
-  font-size: 12px;
+.daynav-date {
+  font-size: 11px;
   letter-spacing: 0.1em;
   color: var(--dim);
 }
 
-.daybtn-edit {
+/* Eight days at a glance: which are planned, and where you are. */
+.daystrip {
+  display: flex;
+  gap: 3px;
+}
+
+.daystrip-day {
+  flex: 1 1 0;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--rule);
   font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  color: var(--faint);
+}
+
+.daystrip-day[data-planned='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+.daystrip-day[data-current='true'] {
+  border-color: var(--ink);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.daystrip-day[data-current='true'][data-planned='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .banner {
@@ -249,16 +303,19 @@ ul {
 
 .hud {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   padding: 12px;
   border: 1px solid var(--rule-strong);
 }
 
 .hud-window {
+  position: relative;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: center;
   gap: 10px;
+  width: 100%;
+  min-height: 40px;
   font-size: 19px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -269,6 +326,20 @@ ul {
   color: var(--dim);
   font-weight: 400;
 }
+
+.hud-window-edit {
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+
 
 .hud-bar {
   height: 6px;

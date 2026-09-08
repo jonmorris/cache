@@ -2,21 +2,25 @@
 
 A one-list-at-a-time task pad that deletes itself.
 
-Cache holds exactly one list. You set the day it is for — today, or up to seven
-days out — and a start and deadline on that day. Those two times are the window
-your estimates have to fit into. At the deadline the list is destroyed, finished
-or not. There is no archive, no history and no streak to protect. The landing
-screen is blank because that is the resting state.
+Cache holds one list per day, across today and the seven days after it. Each
+gets a start and a deadline on its own day — the window its estimates have to
+fit into — and is destroyed at that deadline, finished or not. There is no
+archive, no history and no streak to protect. A day with nothing on it is blank,
+because that is the resting state.
+
+Arrows at the top step between days, and the strip beneath them marks which days
+already hold a list, so a plan made for Friday is visible from Tuesday without
+walking there.
 
 ## The rules
 
 | | |
 | --- | --- |
-| Lists at once | 1 |
+| Lists | one per day, today to +7 |
 | Items per list | up to 7 |
 | Estimate per item | 15 minutes to 2 hours, in 15-minute steps |
 | Day horizon | today to +7 days |
-| Start and deadline | any two times on the chosen day, both required |
+| Start and deadline | any two times on that day, both required |
 | Destroyed at | its deadline, to the second |
 | Storage | IndexedDB, on device, no account, no server, no sync |
 
@@ -46,7 +50,10 @@ panel — mixing them in one right-aligned column is what made an earlier versio
 shift about whenever a value changed shape.
 
 Lists written before start times and deadlines existed keep the old
-04:00-next-morning rule until you give them their own.
+04:00-next-morning rule until you give them their own. Those are the only lists
+that can outlive their day; because the navigator spans today onwards, such a
+list is off-screen for the few hours between midnight and 04:00, though it is
+still in storage until it is deleted.
 
 ## Install it on your phone
 
@@ -105,6 +112,11 @@ hand-rolled PNG encoder over `node:zlib` — no image library — and runs from
 **Reordering measures row geometry once, at drag start.** Reading rects per
 pointer move would read back a layout the drag is itself shifting. See
 `src/components/ItemList.tsx`.
+
+**Storage is at database version 2**, keyed by date. Version 1 kept a single
+list at the fixed key `current`; the upgrade in `src/db.ts` carries it onto its
+own day and drops the old store. `days.mjs` exercises that path against a real
+v1 database.
 
 **The service worker serves hashed assets cache-first and navigations
 network-first**, falling back to the cached shell. Bump `VERSION` in

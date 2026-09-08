@@ -14,6 +14,7 @@ import { MAX_ITEMS, type List } from '../types';
 
 interface HudProps {
   list: List;
+  onEditTimes: () => void;
 }
 
 const MINUTE = 60_000;
@@ -26,7 +27,7 @@ const MINUTE = 60_000;
  * what made the old ledger jump around whenever a value changed shape. Times
  * are 24-hour so every glyph is the same width.
  */
-export function Hud({ list }: HudProps) {
+export function Hud({ list, onEditTimes }: HudProps) {
   const planned = list.items.reduce((sum, i) => sum + i.minutes, 0);
   const remaining = list.items.reduce((sum, i) => (i.done ? sum : sum + i.minutes), 0);
   const done = list.items.filter((i) => i.done).length;
@@ -72,7 +73,7 @@ export function Hud({ list }: HudProps) {
 
   return (
     <section className="hud" data-state={soon ? 'soon' : over ? 'over' : 'ok'}>
-      <div className="hud-window">
+      <button className="hud-window" onClick={onEditTimes} aria-label="Change start and deadline">
         {list.start ? (
           <>
             <span className="hud-time">{list.start}</span>
@@ -89,7 +90,10 @@ export function Hud({ list }: HudProps) {
             <span className="hud-time">{deadlineLabel(list)}</span>
           </>
         )}
-      </div>
+        <span className="hud-window-edit" aria-hidden="true">
+          Edit
+        </span>
+      </button>
 
       {span !== null && (
         <div

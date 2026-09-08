@@ -1,16 +1,21 @@
 import { useState } from 'react';
 import { ConfirmSheet } from '../components/ConfirmSheet';
+import { DayNav } from '../components/DayNav';
 import { Hud } from '../components/Hud';
 import { ItemList } from '../components/ItemList';
 import { ItemSheet } from '../components/ItemSheet';
 import { ScheduleSheet } from '../components/ScheduleSheet';
 import { MAX_ITEMS, type Item, type List } from '../types';
-import { dayLabel, deadlineLabel, isPending, shortDate } from '../time';
+import { dayLabel, deadlineLabel, isPending, pickerName } from '../time';
 
 interface ListScreenProps {
+  /** The list for the day being viewed, if there is one. */
   list: List | null;
+  date: string;
   now: number;
-  onSchedule: (date: string, start: string, deadline: string) => void;
+  planned: Set<string>;
+  onPickDay: (date: string) => void;
+  onSchedule: (start: string, deadline: string) => void;
   onDiscard: () => void;
   onAddItem: (name: string, minutes: number) => void;
   onSaveItem: (id: string, name: string, minutes: number) => void;
@@ -22,98 +27,82 @@ interface ListScreenProps {
 type ItemTarget = { mode: 'add' } | { mode: 'edit'; item: Item };
 
 export function ListScreen(props: ListScreenProps) {
-  const { list, now } = props;
+  const { list, date, now } = props;
   const [scheduling, setScheduling] = useState(false);
   const [itemSheet, setItemSheet] = useState<ItemTarget | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Item | null>(null);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
 
-  const schedule = (
-    <ScheduleSheet
-      open={scheduling}
-      title={list ? 'Change schedule' : 'New list'}
-      cta={list ? 'Save' : 'Create'}
-      now={now}
-      date={list?.date ?? null}
-      start={list?.start ?? null}
-      deadline={list?.deadline ?? null}
-      onSubmit={(date, start, deadline) => {
-        props.onSchedule(date, start, deadline);
-        setScheduling(false);
-      }}
-      onClose={() => setScheduling(false)}
-    />
-  );
+  const full = (list?.items.length ?? 0) >= MAX_ITEMS;
+  const locked = list ? isPending(list, now) : false;
 
-  if (!list) {
-    return (
-      <>
+  return (
+    <>
+      <DayNav date={date} now={now} planned={props.planned} onPick={props.onPickDay} />
+
+      {!list ? (
         <div className="empty">
           <div className="empty-mark" aria-hidden="true">
             [ ]
           </div>
-          <p className="empty-title">No active list</p>
+          <p className="empty-title">Nothing for {dayLabel(date, now)}</p>
           <button className="btn primary" onClick={() => setScheduling(true)}>
             New list
           </button>
-          <p className="empty-note">One list at a time · clears itself</p>
+          <p className="empty-note">One list a day · clears itself</p>
         </div>
-        {schedule}
-      </>
-    );
-  }
-
-  const full = list.items.length >= MAX_ITEMS;
-  const locked = isPending(list, now);
-
-  return (
-    <>
-      <header className="head">
-        <button className="daybtn" onClick={() => setScheduling(true)}>
-          <span className="daybtn-day">{dayLabel(list.date, now)}</span>
-          <span className="daybtn-date">{shortDate(list.date)}</span>
-          <span className="daybtn-edit" aria-hidden="true">
-            Change
-          </span>
-        </button>
-
-        {locked && (
-          <p className="banner">
-            <span className="banner-key">Locked</span>
-            <span>· Opens {dayLabel(list.date, now)}</span>
-          </p>
-        )}
-
-        <Hud list={list} />
-
-      </header>
-
-      {list.items.length === 0 ? (
-        <p className="foot-note" style={{ textAlign: 'center' }}>
-          No items yet · up to {MAX_ITEMS}
-        </p>
       ) : (
-        <ItemList
-          items={list.items}
-          lockTicking={locked}
-          onReorder={props.onReorder}
-          onToggle={props.onToggleItem}
-          onEdit={(item) => setItemSheet({ mode: 'edit', item })}
-          onDelete={setPendingDelete}
-        />
+        <>
+          {locked && (
+            <p className="banner">
+              <span className="banner-key">Locked</span>
+              <span>· Opens {pickerName(list.date, now)}</span>
+            </p>
+          )}
+
+          <Hud list={list} onEditTimes={() => setScheduling(true)} />
+
+          {list.items.length === 0 ? (
+            <p className="foot-note" style={{ textAlign: 'center', marginTop: 18 }}>
+              No items yet · up to {MAX_ITEMS}
+            </p>
+          ) : (
+            <ItemList
+              items={list.items}
+              lockTicking={locked}
+              onReorder={props.onReorder}
+              onToggle={props.onToggleItem}
+              onEdit={(item) => setItemSheet({ mode: 'edit', item })}
+              onDelete={setPendingDelete}
+            />
+          )}
+
+          <button className="addrow" disabled={full} onClick={() => setItemSheet({ mode: 'add' })}>
+            {full ? `List full · ${MAX_ITEMS}/${MAX_ITEMS} items` : '+ Add item'}
+          </button>
+
+          <div className="listfoot">
+            <button className="link-danger" onClick={() => setConfirmDiscard(true)}>
+              Discard list
+            </button>
+          </div>
+        </>
       )}
 
-      <button className="addrow" disabled={full} onClick={() => setItemSheet({ mode: 'add' })}>
-        {full ? `List full · ${MAX_ITEMS}/${MAX_ITEMS} items` : '+ Add item'}
-      </button>
-
-      <div className="listfoot">
-        <button className="link-danger" onClick={() => setConfirmDiscard(true)}>
-          Discard list
-        </button>
-      </div>
-
-      {schedule}
+      <ScheduleSheet
+        open={scheduling}
+        title={list ? 'Change times' : `New list · ${dayLabel(date, now).toLowerCase()}`}
+        cta={list ? 'Save' : 'Create'}
+        now={now}
+        date={date}
+        start={list?.start ?? null}
+        deadline={list?.deadline ?? null}
+        onSubmit={(start, deadline) => {
+          props.onSchedule(start, deadline);
+          setScheduling(false);
+        }}
+        onClose={() => setScheduling(false)}
+      />
 
       <ItemSheet
         open={itemSheet !== null}
@@ -149,9 +138,9 @@ export function ListScreen(props: ListScreenProps) {
         title="Discard list"
         body={
           <>
-            Delete this list and its {list.items.length}{' '}
-            {list.items.length === 1 ? 'item' : 'items'} now, without waiting for{' '}
-            <strong>{deadlineLabel(list)}</strong>?
+            Delete the {dayLabel(date, now).toLowerCase()} list and its {list?.items.length ?? 0}{' '}
+            {list?.items.length === 1 ? 'item' : 'items'} now, without waiting for{' '}
+            <strong>{list ? deadlineLabel(list) : ''}</strong>?
           </>
         }
         confirmLabel="Discard"

@@ -9,9 +9,8 @@ export interface Item {
 }
 
 export interface List {
-  /** Only ever one list, so the record is a singleton. */
-  id: 'current';
-  /** Local calendar day the list is for, as YYYY-MM-DD. */
+  /** Local calendar day the list is for, as YYYY-MM-DD. Its storage key: one
+   *  list per day, across today and the seven days after it. */
   date: string;
   /**
    * Local wall-clock time on `date` when work begins, as HH:MM. With the
@@ -39,9 +38,9 @@ export interface Settings {
 
 export interface Backup {
   app: 'cache';
-  version: 1;
+  version: 2;
   exportedAt: string;
-  list: List | null;
+  lists: List[];
   settings: Settings;
 }
 

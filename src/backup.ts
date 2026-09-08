@@ -9,8 +9,8 @@ import {
   type ThemeMode,
 } from './types';
 
-export function buildBackup(list: List | null, settings: Settings): Backup {
-  return { app: 'cache', version: 1, exportedAt: new Date().toISOString(), list, settings };
+export function buildBackup(lists: List[], settings: Settings): Backup {
+  return { app: 'cache', version: 2, exportedAt: new Date().toISOString(), lists, settings };
 }
 
 export function download(backup: Backup) {
@@ -51,13 +51,25 @@ export function parseBackup(text: string): Backup {
   }
   if (!isRecord(data) || data.app !== 'cache') throw new Error('Not a Cache backup file.');
 
-  let list: List | null = null;
-  if (isRecord(data.list)) {
-    const raw = data.list;
-    if (typeof raw.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(raw.date)) {
+  // v2 carries an array of lists; v1 files carry a single one under `list`.
+  const raw: unknown[] = Array.isArray(data.lists)
+    ? data.lists
+    : isRecord(data.list)
+      ? [data.list]
+      : [];
+
+  const seen = new Set<string>();
+  const lists: List[] = [];
+  for (const entry of raw) {
+    if (!isRecord(entry)) continue;
+    if (typeof entry.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(entry.date)) {
       throw new Error('Backup contains a list with no valid date.');
     }
-    const items: Item[] = (Array.isArray(raw.items) ? raw.items : [])
+    // One list per day is the whole model; a duplicated day would overwrite.
+    if (seen.has(entry.date)) continue;
+    seen.add(entry.date);
+
+    const items: Item[] = (Array.isArray(entry.items) ? entry.items : [])
       .filter(isRecord)
       .slice(0, MAX_ITEMS)
       .map((it) => ({
@@ -68,16 +80,16 @@ export function parseBackup(text: string): Backup {
         doneAt: typeof it.doneAt === 'number' ? it.doneAt : it.done === true ? Date.now() : null,
         createdAt: typeof it.createdAt === 'number' ? it.createdAt : Date.now(),
       }));
-    list = {
-      id: 'current',
-      date: raw.date,
+
+    lists.push({
+      date: entry.date,
       // Backups predating these fields restore without them: no window, and the
       // old 4am-next-morning rule.
-      start: hhmm(raw.start),
-      deadline: hhmm(raw.deadline),
-      createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now(),
+      start: hhmm(entry.start),
+      deadline: hhmm(entry.deadline),
+      createdAt: typeof entry.createdAt === 'number' ? entry.createdAt : Date.now(),
       items,
-    };
+    });
   }
 
   const theme = isRecord(data.settings) ? data.settings.theme : undefined;
@@ -86,5 +98,5 @@ export function parseBackup(text: string): Backup {
     theme: THEMES.includes(theme as ThemeMode) ? (theme as ThemeMode) : DEFAULT_SETTINGS.theme,
   };
 
-  return { app: 'cache', version: 1, exportedAt: String(data.exportedAt ?? ''), list, settings };
+  return { app: 'cache', version: 2, exportedAt: String(data.exportedAt ?? ''), lists, settings };
 }
