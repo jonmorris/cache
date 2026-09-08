@@ -17,9 +17,9 @@ interface ItemSheetProps {
 
 const FORM_ID = 'item-form';
 
-const KINDS: { value: Kind; label: string; hint: string }[] = [
-  { value: 'task', label: 'Task', hint: 'Work you chose. Counts against the seven.' },
-  { value: 'transit', label: 'Transit', hint: 'Getting there. Costs time, not a slot.' },
+const KINDS: { value: Kind; label: string }[] = [
+  { value: 'task', label: 'Task' },
+  { value: 'transit', label: 'Transit' },
 ];
 
 export function ItemSheet({
@@ -113,11 +113,11 @@ export function ItemSheet({
               </button>
             ))}
           </div>
-          <p className="field-hint">
-            {barred('task')
-              ? 'All seven tasks are used. Transit does not need a slot.'
-              : KINDS.find((k) => k.value === kind)?.hint}
-          </p>
+          {/* Only when Task is refused: a disabled option needs a reason, but
+              two labelled buttons do not need explaining. */}
+          {barred('task') && (
+            <p className="field-hint">All seven tasks are used. Transit does not need a slot.</p>
+          )}
         </div>
 
         <label className="field">
