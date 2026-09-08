@@ -71,12 +71,6 @@ export function startsAt(list: Schedule): number | null {
   return list.start ? timeOn(list.date, list.start) : null;
 }
 
-/** The planned window: deadline less start, or null without one. */
-export function windowMs(list: Schedule): number | null {
-  const start = startsAt(list);
-  return start === null ? null : expiresAt(list) - start;
-}
-
 /**
  * Time actually usable between now and the deadline. Bounded below by the
  * start: hours before work begins are not hours that can be spent, which is

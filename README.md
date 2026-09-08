@@ -70,20 +70,24 @@ which is the one thing the cap has to refuse.
 
 ## The HUD
 
-The HUD holds the whole situation: the two times, five figures, and the clock.
-The figures read as two pairs, work on the left and time on the right.
-**Planned** against **window** is what you set out to do against the hours you
-gave yourself — neither moves as you work, only as you edit the list or the
-times. **To do** against **available** is that same question now: the work still
-open against what is left of the window. **Slack** is the difference between the
-second pair, and runs the full width beneath them because it is what the rest
-add up to; on screen, available less to do is exactly slack.
+The HUD holds the whole situation: the two times, four figures, and the clock.
+Work sits in the left column and time in the right. **Planned** against
+**available** is what you took on against the hours you have; **to do** against
+**slack** is what is left of each. On screen, available less to do is exactly
+slack.
 
-The two pairs move independently, which is the point of showing both. Ticking
+The two columns move independently, which is the point of showing both. Ticking
 an item moves **to do** and leaves **available** alone; time passing moves
-**available** and leaves **to do** alone. Available holds at the full window
-until the start goes by and counts down to the deadline thereafter, so before
-you begin it reads the same as window — nothing has been spent yet.
+**available** and leaves **to do** alone. Available holds at the full window —
+deadline less start — until the start goes by, and counts down to the deadline
+thereafter.
+
+There is deliberately no separate *window* figure. It is fixed at deadline less
+start, so before work begins it reads exactly what available reads, and the
+strip above already names both ends of it. Two cells showing one number is a
+wasted cell, and the moments you are most likely to have the app open — setting
+up tomorrow, planning tonight, checking before you start — are precisely the
+ones where they would agree.
 
 Slack going negative turns the panel **terracotta** and says how far over you
 are — that is the problem state, the work no longer fits. Amber is the lesser
