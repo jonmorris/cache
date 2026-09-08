@@ -69,6 +69,9 @@ export function parseBackup(text: string): Backup {
     list = {
       id: 'current',
       date: raw.date,
+      // Backups predating deadlines restore without one and keep the old rule.
+      deadline:
+        typeof raw.deadline === 'string' && /^\d{2}:\d{2}$/.test(raw.deadline) ? raw.deadline : null,
       createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now(),
       items,
     };

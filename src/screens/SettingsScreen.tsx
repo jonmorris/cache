@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import { ConfirmSheet } from '../components/ConfirmSheet';
 import { buildBackup, download, parseBackup } from '../backup';
 import { APP_VERSION, MAX_ITEMS, type Backup, type List, type Settings, type ThemeMode } from '../types';
-import { EXPIRY_HOUR } from '../time';
 
 const THEMES: { id: ThemeMode; label: string }[] = [
   { id: 'system', label: 'System' },
@@ -89,7 +88,7 @@ export function SettingsScreen({ list, settings, onTheme, onRestore }: SettingsS
         <div className="ledger">
           <Row label="Storage" value="On device" />
           <Row label="Accounts" value="None" />
-          <Row label="Expires" value={`${EXPIRY_HOUR}:00 AM next day`} />
+          <Row label="Expires" value="At its deadline" />
           <Row label="Max items" value={String(MAX_ITEMS)} />
           <Row label="Version" value={APP_VERSION} />
         </div>

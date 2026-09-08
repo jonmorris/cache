@@ -35,33 +35,36 @@ export function App() {
       .finally(() => setReady(true));
   }, []);
 
-  /* Clock. Everything date-dependent is derived from `now`, so a list can go
-     from pending to live, and then expire, while the app sits open. */
+  /* Clock. Everything time-dependent is derived from `now` — the countdown
+     ticks, a list goes from pending to live, and it expires, all while the app
+     sits open. Paused when hidden so a backgrounded tab is not waking each
+     second. */
   useEffect(() => {
+    let timer: number | undefined;
     const bump = () => setNow(Date.now());
-    const interval = setInterval(bump, 30_000);
-    const onVisible = () => document.visibilityState === 'visible' && bump();
-    document.addEventListener('visibilitychange', onVisible);
+    const stop = () => {
+      if (timer !== undefined) clearInterval(timer);
+      timer = undefined;
+    };
+    const sync = () => {
+      stop();
+      if (document.visibilityState !== 'visible') return;
+      bump();
+      timer = window.setInterval(bump, 1000);
+    };
+    sync();
+    document.addEventListener('visibilitychange', sync);
     window.addEventListener('focus', bump);
     return () => {
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', onVisible);
+      stop();
+      document.removeEventListener('visibilitychange', sync);
       window.removeEventListener('focus', bump);
     };
   }, []);
 
-  /* Land exactly on the expiry moment rather than up to 30s late. */
-  useEffect(() => {
-    if (!list) return;
-    const delay = expiresAt(list.date) - Date.now();
-    if (delay <= 0 || delay > 2_147_483_000) return;
-    const timer = setTimeout(() => setNow(Date.now()), delay + 250);
-    return () => clearTimeout(timer);
-  }, [list]);
-
   /* The whole point of the app: the list deletes itself, finished or not. */
   useEffect(() => {
-    if (!ready || !list || now < expiresAt(list.date)) return;
+    if (!ready || !list || now < expiresAt(list)) return;
     setList(null);
   }, [ready, list, now]);
 
@@ -96,8 +99,19 @@ export function App() {
     void db.putSettings(next).catch(() => {});
   }, []);
 
-  const onCreate = (date: string) =>
-    setList({ id: 'current', date, createdAt: Date.now(), items: [] });
+  const onSchedule = (date: string, deadline: string) =>
+    setList((current) =>
+      current
+        ? { ...current, date, deadline }
+        : { id: 'current', date, deadline, createdAt: Date.now(), items: [] },
+    );
+
+  const onReorder = (from: number, to: number) =>
+    update((current) => {
+      const items = [...current.items];
+      items.splice(to, 0, ...items.splice(from, 1));
+      return { ...current, items };
+    });
 
   const onAddItem = (name: string, minutes: number) => {
     const item: Item = {
@@ -148,8 +162,8 @@ export function App() {
           <ListScreen
             list={list}
             now={now}
-            onCreate={onCreate}
-            onChangeDay={(date) => update((current) => ({ ...current, date }))}
+            onSchedule={onSchedule}
+            onReorder={onReorder}
             onDiscard={() => setList(null)}
             onAddItem={onAddItem}
             onSaveItem={onSaveItem}

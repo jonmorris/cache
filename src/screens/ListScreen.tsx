@@ -1,46 +1,47 @@
 import { useState } from 'react';
 import { ConfirmSheet } from '../components/ConfirmSheet';
-import { DaySheet } from '../components/DaySheet';
+import { Countdown } from '../components/Countdown';
+import { ItemList } from '../components/ItemList';
 import { ItemSheet } from '../components/ItemSheet';
-import { ItemRow } from '../components/ItemRow';
 import { Progress } from '../components/Progress';
+import { ScheduleSheet } from '../components/ScheduleSheet';
 import { MAX_ITEMS, type Item, type List } from '../types';
-import { dayLabel, duration, expiryLabel, isPending, shortDate } from '../time';
+import { dayLabel, deadlineLabel, duration, isPending, shortDate } from '../time';
 
 interface ListScreenProps {
   list: List | null;
   now: number;
-  onCreate: (date: string) => void;
-  onChangeDay: (date: string) => void;
+  onSchedule: (date: string, deadline: string) => void;
   onDiscard: () => void;
   onAddItem: (name: string, minutes: number) => void;
   onSaveItem: (id: string, name: string, minutes: number) => void;
   onToggleItem: (id: string) => void;
   onDeleteItem: (id: string) => void;
+  onReorder: (from: number, to: number) => void;
 }
 
-type DaySheetMode = 'create' | 'change';
 type ItemTarget = { mode: 'add' } | { mode: 'edit'; item: Item };
 
 export function ListScreen(props: ListScreenProps) {
   const { list, now } = props;
-  const [daySheet, setDaySheet] = useState<DaySheetMode | null>(null);
+  const [scheduling, setScheduling] = useState(false);
   const [itemSheet, setItemSheet] = useState<ItemTarget | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Item | null>(null);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
 
-  const dayPicker = (
-    <DaySheet
-      open={daySheet !== null}
-      title={daySheet === 'change' ? 'Change day' : 'New list'}
+  const schedule = (
+    <ScheduleSheet
+      open={scheduling}
+      title={list ? 'Change schedule' : 'New list'}
+      cta={list ? 'Save' : 'Create'}
       now={now}
-      selected={daySheet === 'change' ? (list?.date ?? null) : null}
-      onPick={(iso) => {
-        if (daySheet === 'change') props.onChangeDay(iso);
-        else props.onCreate(iso);
-        setDaySheet(null);
+      date={list?.date ?? null}
+      deadline={list?.deadline ?? null}
+      onSubmit={(date, deadline) => {
+        props.onSchedule(date, deadline);
+        setScheduling(false);
       }}
-      onClose={() => setDaySheet(null)}
+      onClose={() => setScheduling(false)}
     />
   );
 
@@ -52,12 +53,12 @@ export function ListScreen(props: ListScreenProps) {
             [ ]
           </div>
           <p className="empty-title">No active list</p>
-          <button className="btn primary" onClick={() => setDaySheet('create')}>
+          <button className="btn primary" onClick={() => setScheduling(true)}>
             New list
           </button>
           <p className="empty-note">One list at a time · clears itself</p>
         </div>
-        {dayPicker}
+        {schedule}
       </>
     );
   }
@@ -71,7 +72,7 @@ export function ListScreen(props: ListScreenProps) {
   return (
     <>
       <header className="head">
-        <button className="daybtn" onClick={() => setDaySheet('change')}>
+        <button className="daybtn" onClick={() => setScheduling(true)}>
           <span className="daybtn-day">{dayLabel(list.date, now)}</span>
           <span className="daybtn-date">{shortDate(list.date)}</span>
           <span className="daybtn-edit" aria-hidden="true">
@@ -88,16 +89,23 @@ export function ListScreen(props: ListScreenProps) {
 
         <div className="ledger">
           <div className="ledger-row is-total">
-            <span className="lbl">Estimated</span>
+            <span>Estimated</span>
             <span className="dots" aria-hidden="true" />
             <span className="val">{duration(total)}</span>
           </div>
           <div className="ledger-row is-left">
-            <span className="lbl">Remaining</span>
+            <span>Remaining</span>
             <span className="dots" aria-hidden="true" />
             <span className="val">{duration(left)}</span>
           </div>
+          <div className="ledger-row">
+            <span>Deadline</span>
+            <span className="dots" aria-hidden="true" />
+            <span className="val">{deadlineLabel(list)}</span>
+          </div>
         </div>
+
+        <Countdown list={list} now={now} remaining={left} compare={!locked} />
 
         {list.items.length > 0 && (
           <div>
@@ -106,7 +114,9 @@ export function ListScreen(props: ListScreenProps) {
               <span>
                 {doneCount}/{list.items.length} done
               </span>
-              <span>Expires {expiryLabel(list.date)}</span>
+              <span>
+                {list.items.length}/{MAX_ITEMS} items
+              </span>
             </p>
           </div>
         )}
@@ -119,18 +129,14 @@ export function ListScreen(props: ListScreenProps) {
           No items yet · up to {MAX_ITEMS}
         </p>
       ) : (
-        <ul className="items">
-          {list.items.map((item) => (
-            <ItemRow
-              key={item.id}
-              item={item}
-              lockTicking={locked}
-              onToggle={() => props.onToggleItem(item.id)}
-              onEdit={() => setItemSheet({ mode: 'edit', item })}
-              onDelete={() => setPendingDelete(item)}
-            />
-          ))}
-        </ul>
+        <ItemList
+          items={list.items}
+          lockTicking={locked}
+          onReorder={props.onReorder}
+          onToggle={props.onToggleItem}
+          onEdit={(item) => setItemSheet({ mode: 'edit', item })}
+          onDelete={setPendingDelete}
+        />
       )}
 
       <button className="addrow" disabled={full} onClick={() => setItemSheet({ mode: 'add' })}>
@@ -138,15 +144,12 @@ export function ListScreen(props: ListScreenProps) {
       </button>
 
       <div className="listfoot">
-        {list.items.length === 0 && (
-          <span className="foot-note">Expires {expiryLabel(list.date)}</span>
-        )}
         <button className="link-danger" onClick={() => setConfirmDiscard(true)}>
           Discard list
         </button>
       </div>
 
-      {dayPicker}
+      {schedule}
 
       <ItemSheet
         open={itemSheet !== null}
@@ -184,7 +187,7 @@ export function ListScreen(props: ListScreenProps) {
           <>
             Delete this list and its {list.items.length}{' '}
             {list.items.length === 1 ? 'item' : 'items'} now, without waiting for{' '}
-            <strong>{expiryLabel(list.date)}</strong>?
+            <strong>{deadlineLabel(list)}</strong>?
           </>
         }
         confirmLabel="Discard"

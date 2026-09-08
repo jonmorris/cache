@@ -6,6 +6,8 @@ interface SheetProps {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  /** Pinned below the scrolling body, so actions never scroll out of reach. */
+  footer?: ReactNode;
 }
 
 /**
@@ -16,7 +18,7 @@ interface SheetProps {
  * sheet nested in one is clipped by that container and ends up behind the tab
  * bar. Portalling to <body> keeps the viewport as its containing block.
  */
-export function Sheet({ open, title, onClose, children }: SheetProps) {
+export function Sheet({ open, title, onClose, children, footer }: SheetProps) {
   const [mounted, setMounted] = useState(open);
   const [shown, setShown] = useState(false);
   const panel = useRef<HTMLDivElement>(null);
@@ -73,6 +75,7 @@ export function Sheet({ open, title, onClose, children }: SheetProps) {
           </button>
         </div>
         <div className="sheet-body">{children}</div>
+        {footer && <div className="sheet-foot">{footer}</div>}
       </div>
     </div>,
     document.body,
