@@ -4,8 +4,10 @@ import {
   countdown,
   deadlineLabel,
   duration,
+  expiresAt,
   signedDuration,
-  startByLabel,
+  startsAt,
+  windowMs,
 } from '../time';
 import { Progress } from './Progress';
 import { MAX_ITEMS, type List } from '../types';
@@ -24,6 +26,9 @@ const MINUTE = 60_000;
  * the two read at different widths — mixing them in one right-aligned column is
  * what made the old ledger jump around whenever a value changed shape. Times
  * are 24-hour so every glyph is the same width.
+ *
+ * Slack, not a separate figure, answers whether the work fits: with a start in
+ * hand it already accounts for the hours before work begins.
  */
 export function Hud({ list, onEditTimes }: HudProps) {
   const planned = list.items.reduce((sum, i) => sum + i.minutes, 0);
@@ -61,8 +66,13 @@ export function Hud({ list, onEditTimes }: HudProps) {
     };
   }, []);
 
-  const left = availableMs(list, now);
-  const slack = Math.round((left - remaining * MINUTE) / MINUTE);
+  const start = startsAt(list);
+  const span = windowMs(list);
+  const usable = availableMs(list, now);
+  const slack = Math.round((usable - remaining * MINUTE) / MINUTE);
+
+  const beforeStart = start !== null && now < start;
+  const left = expiresAt(list) - now;
   // Over is the problem: the work no longer fits. Soon is only a nudge that
   // the deadline is close, which is fine if there is nothing left to do.
   const over = slack < 0;
@@ -70,12 +80,21 @@ export function Hud({ list, onEditTimes }: HudProps) {
 
   /* Pressure: how much of the time left is already spoken for. Full means you
      are at the last moment you could start; past full, you are behind. */
-  const committed = left > 0 ? Math.min(1, (remaining * MINUTE) / left) : 1;
+  const committed = usable > 0 ? Math.min(1, (remaining * MINUTE) / usable) : 1;
 
   return (
     <section className="hud" data-state={over ? 'over' : soon ? 'soon' : 'ok'}>
-      <button className="hud-window" onClick={onEditTimes} aria-label="Change the deadline">
-        <span className="hud-label">Due</span>
+      <button className="hud-window" onClick={onEditTimes} aria-label="Change the start and deadline">
+        {list.start ? (
+          <>
+            <span className="hud-time">{list.start}</span>
+            <span className="hud-arrow" aria-hidden="true">
+              →
+            </span>
+          </>
+        ) : (
+          <span className="hud-label">Due</span>
+        )}
         <span className="hud-time">{deadlineLabel(list)}</span>
         <span className="hud-window-edit" aria-hidden="true">
           Edit
@@ -92,19 +111,17 @@ export function Hud({ list, onEditTimes }: HudProps) {
 
       <div className="hud-stats">
         <Stat label="Planned" value={duration(planned)} />
-        <Stat
-          label="Start by"
-          value={startByLabel(list, remaining)}
-          tone={over ? 'bad' : undefined}
-        />
+        <Stat label="Window" value={span === null ? '—' : duration(Math.round(span / MINUTE))} />
         <Stat label="To do" value={duration(remaining)} />
         <Stat label="Slack" value={signedDuration(slack)} tone={over ? 'bad' : undefined} />
       </div>
 
       <div className="hud-clock">
-        <span className="hud-clock-label">Time left</span>
+        <span className="hud-clock-label">{beforeStart ? 'Starts in' : 'Time left'}</span>
         <span className="hud-clock-dots" aria-hidden="true" />
-        <span className="hud-clock-value">{countdown(left)}</span>
+        <span className="hud-clock-value">
+          {countdown(beforeStart ? (start as number) - now : left)}
+        </span>
       </div>
 
       {over && <p className="hud-note">Over by {duration(Math.abs(slack))}</p>}

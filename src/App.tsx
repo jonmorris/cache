@@ -144,12 +144,12 @@ export function App() {
 
   const list = lists[cursor] ?? null;
 
-  const onSchedule = (deadline: string) =>
+  const onSchedule = (start: string, deadline: string) =>
     setLists((current) => ({
       ...current,
       [cursor]: current[cursor]
-        ? { ...current[cursor], deadline }
-        : { date: cursor, deadline, createdAt: Date.now(), items: [] },
+        ? { ...current[cursor], start, deadline }
+        : { date: cursor, start, deadline, createdAt: Date.now(), items: [] },
     }));
 
   const onDiscard = () =>

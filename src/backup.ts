@@ -83,8 +83,9 @@ export function parseBackup(text: string): Backup {
 
     lists.push({
       date: entry.date,
-      // Backups predating deadlines restore without one and keep the old
-      // 4am-next-morning rule. A start, if the file has one, is now derived.
+      // Backups predating these fields restore without them: no window, and
+      // the old 4am-next-morning rule.
+      start: hhmm(entry.start),
       deadline: hhmm(entry.deadline),
       createdAt: typeof entry.createdAt === 'number' ? entry.createdAt : Date.now(),
       items,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Sheet } from './Sheet';
-import { defaultDeadline, pickerName, timeOn } from '../time';
+import { defaultDeadline, defaultStart, pickerName, timeOn } from '../time';
 
 interface ScheduleSheetProps {
   open: boolean;
@@ -9,26 +9,41 @@ interface ScheduleSheetProps {
   now: number;
   /** The day this list is for. Set by navigation, not editable here. */
   date: string;
+  start: string | null;
   deadline: string | null;
-  onSubmit: (deadline: string) => void;
+  onSubmit: (start: string, deadline: string) => void;
   onClose: () => void;
 }
 
 /**
- * A deadline, and nothing else. When work has to begin is a consequence of the
- * deadline and what is on the list, so the HUD derives it rather than asking.
+ * When work runs from, and when it is due. Both arrive filled in — the quarter
+ * hour already under way, or 09:00 on a later day — so setting a list stays one
+ * decision, and the times are there to adjust when they matter.
  */
 export function ScheduleSheet(props: ScheduleSheetProps) {
   const { open, title, cta, now, date, onSubmit, onClose } = props;
-  const [time, setTime] = useState(props.deadline ?? defaultDeadline(date, now));
+  const [from, setFrom] = useState(props.start ?? defaultStart(date, now));
+  const [to, setTo] = useState(props.deadline ?? defaultDeadline(date, now));
 
   useEffect(() => {
     if (!open) return;
-    setTime(props.deadline ?? defaultDeadline(date, Date.now()));
-  }, [open, date, props.deadline]);
+    setFrom(props.start ?? defaultStart(date, Date.now()));
+    setTo(props.deadline ?? defaultDeadline(date, Date.now()));
+  }, [open, date, props.start, props.deadline]);
 
-  const passed = Boolean(time) && timeOn(date, time) <= now;
-  const valid = Boolean(time) && !passed;
+  // The start may be in the past — you can already be underway. The deadline
+  // may not, and must leave a window to work in.
+  const passed = Boolean(to) && timeOn(date, to) <= now;
+  const inverted = Boolean(from && to) && timeOn(date, from) >= timeOn(date, to);
+  const valid = Boolean(from) && Boolean(to) && !passed && !inverted;
+
+  const hint = !from || !to
+    ? 'Set a start and a deadline.'
+    : passed
+      ? `${to} has already gone by. Pick a later deadline.`
+      : inverted
+        ? 'The deadline has to be after the start.'
+        : `${from} to ${to} on ${pickerName(date, now).toLowerCase()}.`;
 
   return (
     <Sheet
@@ -40,35 +55,35 @@ export function ScheduleSheet(props: ScheduleSheetProps) {
           <button className="btn ghost" onClick={onClose}>
             Cancel
           </button>
-          <button className="btn primary" disabled={!valid} onClick={() => valid && onSubmit(time)}>
+          <button
+            className="btn primary"
+            disabled={!valid}
+            onClick={() => valid && onSubmit(from, to)}
+          >
             {cta}
           </button>
         </div>
       }
     >
       <p className="sheet-text">
-        The list is destroyed at the deadline on{' '}
-        <strong>{pickerName(date, now).toLowerCase()}</strong>, finished or not. Cache works out the
-        latest you can start from what is on it.
+        Work runs from the start to the deadline on{' '}
+        <strong>{pickerName(date, now).toLowerCase()}</strong>. The list is destroyed at the
+        deadline, finished or not.
       </p>
 
-      <label className="field field-deadline">
-        <span className="field-label">Deadline</span>
-        <input
-          className="input"
-          type="time"
-          value={time}
-          required
-          onChange={(e) => setTime(e.target.value)}
-        />
-      </label>
+      <div className="field-times">
+        <label className="field">
+          <span className="field-label">Start</span>
+          <input className="input" type="time" value={from} required onChange={(e) => setFrom(e.target.value)} />
+        </label>
+        <label className="field">
+          <span className="field-label">Deadline</span>
+          <input className="input" type="time" value={to} required onChange={(e) => setTo(e.target.value)} />
+        </label>
+      </div>
 
-      <p className="field-hint" data-tone={passed ? 'error' : undefined}>
-        {!time
-          ? 'Pick a deadline.'
-          : passed
-            ? `${time} has already gone by. Pick a later deadline.`
-            : `Destroyed at ${time} on ${pickerName(date, now).toLowerCase()}.`}
+      <p className="field-hint" data-tone={passed || inverted ? 'error' : undefined}>
+        {hint}
       </p>
     </Sheet>
   );

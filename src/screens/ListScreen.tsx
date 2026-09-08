@@ -15,7 +15,7 @@ interface ListScreenProps {
   now: number;
   planned: Set<string>;
   onPickDay: (date: string) => void;
-  onSchedule: (deadline: string) => void;
+  onSchedule: (start: string, deadline: string) => void;
   onDiscard: () => void;
   onAddItem: (name: string, minutes: number) => void;
   onSaveItem: (id: string, name: string, minutes: number) => void;
@@ -91,13 +91,14 @@ export function ListScreen(props: ListScreenProps) {
 
       <ScheduleSheet
         open={scheduling}
-        title={list ? 'Change deadline' : `New list · ${dayLabel(date, now).toLowerCase()}`}
+        title={list ? 'Change times' : `New list · ${dayLabel(date, now).toLowerCase()}`}
         cta={list ? 'Save' : 'Create'}
         now={now}
         date={date}
+        start={list?.start ?? null}
         deadline={list?.deadline ?? null}
-        onSubmit={(deadline) => {
-          props.onSchedule(deadline);
+        onSubmit={(start, deadline) => {
+          props.onSchedule(start, deadline);
           setScheduling(false);
         }}
         onClose={() => setScheduling(false)}

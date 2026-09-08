@@ -81,7 +81,10 @@ const readItem = (raw: Item & { done?: boolean }): Item => ({
 export const getLists = () =>
   run<List[]>(DAYS, 'readonly', (s) => s.getAll()).then((rows) =>
     Object.fromEntries(
-      rows.map((list) => [list.date, { ...list, items: (list.items ?? []).map(readItem) }]),
+      rows.map((list) => [
+        list.date,
+        { ...list, start: list.start ?? null, items: (list.items ?? []).map(readItem) },
+      ]),
     ),
   );
 
