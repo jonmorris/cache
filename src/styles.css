@@ -456,14 +456,37 @@ ul {
 
    Terracotta marks the problem: the work no longer fits before the deadline.
    Amber is the lesser signal, that the deadline is merely close. */
+/* The overdue alert, below the week selector. Terracotta because a passed
+   deadline is the problem state, not a warning about one. */
+.alert {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--danger);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--danger);
+}
+
+.alert-key {
+  font-weight: 700;
+}
+
+/* Overdue outranks over: the deadline has actually gone, so it takes the
+   same terracotta and the panel says how late rather than how overcommitted. */
+.hud[data-state='overdue'],
 .hud[data-state='over'] {
   border-color: var(--danger);
 }
 
+.hud[data-state='overdue'] .hud-clock-value,
 .hud[data-state='over'] .hud-clock-value {
   color: var(--danger);
 }
 
+.hud[data-state='overdue'] .hud-bar-fill,
 .hud[data-state='over'] .hud-bar-fill {
   background: var(--danger);
 }

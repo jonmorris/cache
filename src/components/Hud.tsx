@@ -3,8 +3,8 @@ import {
   availableMs,
   countdown,
   deadlineLabel,
+  dueAt,
   duration,
-  expiresAt,
   signedDuration,
   startsAt,
 } from '../time';
@@ -83,18 +83,20 @@ export function Hud({ list, onEditTimes }: HudProps) {
   const slack = Math.round((usable - remaining * MINUTE) / MINUTE);
 
   const beforeStart = start !== null && now < start;
-  const left = expiresAt(list) - now;
-  // Over is the problem: the work no longer fits. Soon is only a nudge that
-  // the deadline is close, which is fine if there is nothing left to do.
-  const over = slack < 0;
-  const soon = !over && left <= 15 * MINUTE;
+  const left = dueAt(list) - now;
+  // Three degrees, most severe first. Overdue is a fact: the deadline has
+  // gone. Over is a forecast: the work no longer fits in what is left. Soon is
+  // only a nudge that the deadline is close, which is fine if nothing is open.
+  const overdue = left <= 0;
+  const over = !overdue && slack < 0;
+  const soon = !overdue && !over && left <= 15 * MINUTE;
 
   /* Pressure: how much of the time left is already spoken for. Full means you
      are at the last moment you could start; past full, you are behind. */
   const committed = usable > 0 ? Math.min(1, (remaining * MINUTE) / usable) : 1;
 
   return (
-    <section className="hud" data-state={over ? 'over' : soon ? 'soon' : 'ok'}>
+    <section className="hud" data-state={overdue ? 'overdue' : over ? 'over' : soon ? 'soon' : 'ok'}>
       <button className="hud-window" onClick={onEditTimes} aria-label="Change the start and deadline">
         {list.start ? (
           <>
@@ -128,10 +130,12 @@ export function Hud({ list, onEditTimes }: HudProps) {
       </div>
 
       <div className="hud-clock">
-        <span className="hud-clock-label">{beforeStart ? 'Starts in' : 'Time left'}</span>
+        <span className="hud-clock-label">
+          {overdue ? 'Late by' : beforeStart ? 'Starts in' : 'Time left'}
+        </span>
         <span className="hud-clock-dots" aria-hidden="true" />
         <span className="hud-clock-value">
-          {countdown(beforeStart ? (start as number) - now : left)}
+          {countdown(overdue ? -left : beforeStart ? (start as number) - now : left)}
         </span>
       </div>
 

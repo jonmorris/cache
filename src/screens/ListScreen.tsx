@@ -6,7 +6,7 @@ import { ItemList } from '../components/ItemList';
 import { ItemSheet } from '../components/ItemSheet';
 import { ScheduleSheet } from '../components/ScheduleSheet';
 import { MAX_ITEMS, tasksFull, type Item, type Kind, type List } from '../types';
-import { dayLabel, deadlineLabel, isPending } from '../time';
+import { dayLabel, deadlineLabel, expiryLabel, isOverdue, isPending } from '../time';
 
 interface ListScreenProps {
   /** The list for the day being viewed, if there is one. */
@@ -38,6 +38,8 @@ export function ListScreen(props: ListScreenProps) {
   // row stays live and the sheet is what refuses an eighth task.
   const full = tasksFull(items);
   const locked = list ? isPending(list, now) : false;
+  // Past its deadline but not yet swept away at 04:00.
+  const overdue = list ? isOverdue(list, now) : false;
 
   return (
     <>
@@ -56,6 +58,15 @@ export function ListScreen(props: ListScreenProps) {
         </div>
       ) : (
         <>
+          {overdue && (
+            <p className="alert" role="status">
+              <span className="alert-key">Overdue</span>
+              <span>
+                · Was due {deadlineLabel(list)} · Clears {expiryLabel(list)}
+              </span>
+            </p>
+          )}
+
           <Hud list={list} onEditTimes={() => setScheduling(true)} />
 
           {list.items.length === 0 ? (

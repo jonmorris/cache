@@ -3,7 +3,7 @@ import { TabBar, type Tab } from './components/TabBar';
 import { ListScreen } from './screens/ListScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import * as db from './db';
-import { addDays, expiresAt, todayISO } from './time';
+import { addDays, dueAt, expiresAt, todayISO } from './time';
 import {
   canHalve,
   DEFAULT_SETTINGS,
@@ -73,10 +73,12 @@ export function App() {
     };
   }, []);
 
-  /* Land on the next deadline itself rather than up to a poll late. */
+  /* Land on each moment that changes a list — its deadline, when it turns
+     overdue, and the 04:00 sweep that removes it — rather than up to a poll
+     late. */
   useEffect(() => {
     const upcoming = Object.values(lists)
-      .map(expiresAt)
+      .flatMap((list) => [dueAt(list), expiresAt(list)])
       .filter((at) => at > Date.now());
     if (upcoming.length === 0) return;
     const delay = Math.min(...upcoming) - Date.now();
@@ -85,7 +87,9 @@ export function App() {
     return () => clearTimeout(timer);
   }, [lists]);
 
-  /* The whole point of the app: each list deletes itself at its deadline. */
+  /* The whole point of the app: each list deletes itself, finished or not.
+     At 04:00 the next morning, though, not at its deadline — passing the
+     deadline leaves it overdue and on screen, where it can still be worked. */
   useEffect(() => {
     if (!ready) return;
     const dead = Object.values(lists).filter((list) => now >= expiresAt(list));

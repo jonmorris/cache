@@ -4,11 +4,12 @@ import type { List } from './types';
 type Schedule = Pick<List, 'date' | 'start' | 'deadline'>;
 
 /**
- * Fallback for lists written before deadlines existed: 04:00 on the morning
- * after the day the list was set for. Every list made now carries its own
- * deadline instead.
+ * Every list is destroyed at 04:00 on the morning after the day it was set
+ * for — not at its own deadline. Passing the deadline makes a list overdue,
+ * which is a state worth seeing; deleting the evidence at the moment you run
+ * out of time is not.
  */
-export const LEGACY_EXPIRY_HOUR = 4;
+export const EXPIRY_HOUR = 4;
 
 /** Deadline used when a day is picked and the usual evening slot has gone. */
 const PREFERRED_DEADLINE = '21:00';
@@ -53,17 +54,30 @@ export function timeOn(iso: string, hhmm: string): number {
   return d.getTime();
 }
 
-/** Epoch ms at which the list is destroyed. */
+/** Epoch ms at which the list is destroyed: 04:00 the next morning, always. */
 export function expiresAt(list: Schedule): number {
-  if (list.deadline) return timeOn(list.date, list.deadline);
   const d = fromISODate(list.date);
   d.setDate(d.getDate() + 1);
-  d.setHours(LEGACY_EXPIRY_HOUR, 0, 0, 0);
+  d.setHours(EXPIRY_HOUR, 0, 0, 0);
   return d.getTime();
 }
 
 export function isExpired(list: Schedule, now: number = Date.now()): boolean {
   return now >= expiresAt(list);
+}
+
+/**
+ * Epoch ms the work is due by. Lists written before deadlines existed have
+ * none, so for them the 04:00 sweep is both the deadline and the end — they
+ * cannot be seen overdue, because they are gone the moment they are late.
+ */
+export function dueAt(list: Schedule): number {
+  return list.deadline ? timeOn(list.date, list.deadline) : expiresAt(list);
+}
+
+/** Past the deadline but not yet swept away. */
+export function isOverdue(list: Schedule, now: number = Date.now()): boolean {
+  return now >= dueAt(list) && now < expiresAt(list);
 }
 
 /** Epoch ms when work is due to begin, or null on records with no start. */
@@ -75,11 +89,12 @@ export function startsAt(list: Schedule): number | null {
  * Time actually usable between now and the deadline. Bounded below by the
  * start: hours before work begins are not hours that can be spent, which is
  * what keeps a list set for a later day from appearing to have every
- * intervening night to play with.
+ * intervening night to play with. Goes negative once the deadline is past —
+ * the caller decides whether that reads as zero or as how far behind you are.
  */
 export function availableMs(list: Schedule, now: number): number {
   const start = startsAt(list);
-  return expiresAt(list) - Math.max(now, start ?? now);
+  return dueAt(list) - Math.max(now, start ?? now);
 }
 
 /** Work begins at the quarter hour already under way, or 09:00 on a later day. */
@@ -163,7 +178,7 @@ export function duration(minutes: number): string {
   return `${Math.floor(minutes / 60)}:${pad(minutes % 60)}`;
 }
 
-/** "WED 04:00" — when a list with no deadline of its own disappears. */
+/** "WED 04:00" — when the list is swept away, whatever its deadline was. */
 export function expiryLabel(list: Schedule): string {
   const at = new Date(expiresAt(list));
   return `${DAYS[at.getDay()]} ${pad(at.getHours())}:${pad(at.getMinutes())}`;

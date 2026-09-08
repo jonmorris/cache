@@ -3,8 +3,9 @@
 A one-list-at-a-time task pad that deletes itself.
 
 Cache holds one list per day, across today and the seven days after it. Each
-runs from a start to a deadline on its own day and is destroyed at that
-deadline, finished or not. There is no
+runs from a start to a deadline on its own day. Missing the deadline does not
+destroy the list — it turns it **overdue**, which is a state worth seeing. The
+list is swept away at 04:00 the next morning, finished or not. There is no
 archive, no history and no streak to protect. A day with nothing on it is blank,
 because that is the resting state.
 
@@ -24,7 +25,8 @@ walking there.
 | Day horizon | today to +7 days |
 | Start | any time before the deadline, prefilled |
 | Deadline | any time on that day, required |
-| Destroyed at | its deadline, to the second |
+| Overdue at | its deadline, to the second |
+| Destroyed at | 04:00 the next morning |
 | Storage | IndexedDB, on device, no account, no server, no sync |
 
 **Estimated** is the sum of every item and never moves. **Remaining** is the sum
@@ -103,11 +105,32 @@ Clock times are 24-hour and durations are tabular, each in their own part of the
 panel — mixing them in one right-aligned column is what made an earlier version
 shift about whenever a value changed shape.
 
-Lists written before deadlines existed keep the old 04:00-next-morning rule
-until you give them one, and having no start they report no window. Those are
-the only lists that can outlive their day; because the navigator spans today
-onwards, such a list is off-screen for the few hours between midnight and 04:00,
-though it is still in storage until it is deleted.
+## Overdue
+
+Passing the deadline used to delete the list. It no longer does. The list stays,
+its items stay tickable, and an alert appears under the week selector naming the
+deadline it missed and when it will be cleared:
+
+```
+OVERDUE · WAS DUE 18:00 · CLEARS WED 04:00
+```
+
+The panel turns terracotta and the clock stops counting down and starts counting
+up — **late by**, rather than **time left**. Available floors at zero and the
+pressure bar fills, because there is no time left to spend inside the window.
+
+Overdue outranks the older *over* state. They are different claims: over is a
+forecast that the work will not fit in the time left; overdue is the fact that
+the time is gone. A list can pass through the first into the second, and once it
+is late that is the thing worth saying.
+
+Everything is still swept at **04:00 the next morning**, which is the rule
+pre-deadline lists always used. Two consequences follow. A list now outlives its
+own day by design, so between midnight and 04:00 it is off-screen — the
+navigator starts at today — while still sitting in storage waiting to be
+deleted. And lists written before deadlines existed cannot be seen overdue at
+all: their deadline and their sweep are the same 04:00 moment, so they are gone
+the instant they are late.
 
 ## Install it on your phone
 
