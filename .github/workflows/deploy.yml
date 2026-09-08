@@ -34,11 +34,11 @@ jobs:
 
       - run: npm run build
 
-      # enablement creates the Pages site (source: GitHub Actions) via the API
-      # on the first run, so the deploy does not need it switched on by hand.
+      # No enablement: true here. The Pages site has to already exist —
+      # GITHUB_TOKEN is refused on the create endpoint with "Resource not
+      # accessible by integration", and asking turns a clear error into a
+      # confusing one.
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
