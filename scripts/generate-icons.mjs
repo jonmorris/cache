@@ -1,8 +1,12 @@
 /**
  * Generates the PWA icon set from scratch — a hand-rolled PNG encoder over
- * node:zlib, no image library. The mark is a single blocky "C", centred, and
- * nothing else: at 60px on a home screen — let alone 16px in a tab — anything
- * finer than one thick stroke turns to mush.
+ * node:zlib, no image library. The mark is a single blocky "C" knocked out of
+ * a solid green field, centred, and nothing else: at 60px on a home screen —
+ * let alone 16px in a tab — anything finer than one thick stroke turns to mush.
+ *
+ * Running the green to the edge rather than the ink is what a home screen
+ * wants: a dark-on-dark icon disappears into a dark wallpaper, and a field
+ * that bleeds is exactly what a maskable icon is for.
  *
  * Run: npm run icons  (wired to predev/prebuild)
  */
@@ -69,8 +73,9 @@ const hex = (h) => [
   parseInt(h.slice(5, 7), 16),
 ];
 
-const BG = hex('#0b0b0c');
-const INK = hex('#3dd68c');
+/** The field runs to the edge; the C is knocked out of it. */
+const FIELD = hex('#3dd68c');
+const MARK = hex('#0b0b0c');
 
 const rect = (buf, size, x0, y0, x1, y1, [r, g, b]) => {
   const l = Math.max(0, Math.round(x0));
@@ -92,23 +97,24 @@ const rect = (buf, size, x0, y0, x1, y1, [r, g, b]) => {
  * The mark on a 100x100 field, so it scales to any icon size: a square C
  * occupying the middle 60%, which leaves its own margin on every edge.
  *
- * `inset` shrinks the artwork toward the centre for maskable icons. Android
- * guarantees only a centred circle of 80% diameter, so the mark's corners must
- * sit within radius 40 of the centre — a 60-unit square reaches 42.4, hence
- * the trim. Apple masks to a squircle, which clips far less, so the touch icon
- * keeps the mark at full size.
+ * `inset` shrinks the C toward the centre for maskable icons. The field is
+ * never inset — bleeding to the edge is the whole point, since the launcher
+ * crops to a shape of its choosing. Android guarantees only a centred circle
+ * of 80% diameter, so the C's corners must sit within radius 40 of the centre
+ * — a 60-unit square reaches 42.4, hence the trim. Apple masks to a squircle,
+ * which clips far less, so the touch icon keeps the C at full size.
  */
 const draw = (size, { inset = 1 } = {}) => {
   const buf = Buffer.alloc(size * size * 4);
-  rect(buf, size, 0, 0, size, size, BG);
+  rect(buf, size, 0, 0, size, size, FIELD);
 
   // 100-unit field -> pixels, scaled about the centre
   const u = (v) => (50 + (v - 50) * inset) * (size / 100);
 
   const [x0, x1, y0, y1, s] = [20, 80, 20, 80, 15];
-  rect(buf, size, u(x0), u(y0), u(x0 + s), u(y1), INK); // spine
-  rect(buf, size, u(x0), u(y0), u(x1), u(y0 + s), INK); // top arm
-  rect(buf, size, u(x0), u(y1 - s), u(x1), u(y1), INK); // bottom arm
+  rect(buf, size, u(x0), u(y0), u(x0 + s), u(y1), MARK); // spine
+  rect(buf, size, u(x0), u(y0), u(x1), u(y0 + s), MARK); // top arm
+  rect(buf, size, u(x0), u(y1 - s), u(x1), u(y1), MARK); // bottom arm
 
   return encodePng(size, buf);
 };
