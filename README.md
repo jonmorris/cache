@@ -17,7 +17,7 @@ walking there.
 | --- | --- |
 | Lists | one per day, today to +7 |
 | Items per list | up to 7 |
-| Estimate per item | 15 minutes to 2 hours, in 15-minute steps |
+| Estimate per item | 5 or 10 minutes, then quarter-hours to 2 hours |
 | Day horizon | today to +7 days |
 | Deadline | any time on that day, required |
 | Start | derived, never asked for |

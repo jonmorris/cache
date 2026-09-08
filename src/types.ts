@@ -42,7 +42,7 @@ export const APP_VERSION = '1.0.0';
 export const MAX_ITEMS = 7;
 export const MAX_DAYS_AHEAD = 7;
 
-/** 15-minute steps from 15 minutes to 2 hours. */
-export const DURATIONS = [15, 30, 45, 60, 75, 90, 105, 120] as const;
+/** Two short options for quick jobs, then quarter-hours up to 2 hours. */
+export const DURATIONS = [5, 10, 15, 30, 45, 60, 75, 90, 105, 120] as const;
 
 export const DEFAULT_SETTINGS: Settings = { id: 'settings', theme: 'system' };
