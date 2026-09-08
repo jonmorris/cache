@@ -1,8 +1,8 @@
 /**
  * Generates the PWA icon set from scratch — a hand-rolled PNG encoder over
- * node:zlib, no image library. The mark is a blocky "C" above a four-segment
- * progress bar with two segments filled out of order, which is the app's
- * signature UI element.
+ * node:zlib, no image library. The mark is a single blocky "C", centred, and
+ * nothing else: at 60px on a home screen — let alone 16px in a tab — anything
+ * finer than one thick stroke turns to mush.
  *
  * Run: npm run icons  (wired to predev/prebuild)
  */
@@ -71,7 +71,6 @@ const hex = (h) => [
 
 const BG = hex('#0b0b0c');
 const INK = hex('#3dd68c');
-const DIM = hex('#33333a');
 
 const rect = (buf, size, x0, y0, x1, y1, [r, g, b]) => {
   const l = Math.max(0, Math.round(x0));
@@ -90,9 +89,14 @@ const rect = (buf, size, x0, y0, x1, y1, [r, g, b]) => {
 };
 
 /**
- * The mark, described on a 100x100 field so it scales to any icon size.
- * `inset` shrinks the artwork toward the centre for maskable icons, whose
- * safe zone is only the middle 80%.
+ * The mark on a 100x100 field, so it scales to any icon size: a square C
+ * occupying the middle 60%, which leaves its own margin on every edge.
+ *
+ * `inset` shrinks the artwork toward the centre for maskable icons. Android
+ * guarantees only a centred circle of 80% diameter, so the mark's corners must
+ * sit within radius 40 of the centre — a 60-unit square reaches 42.4, hence
+ * the trim. Apple masks to a squircle, which clips far less, so the touch icon
+ * keeps the mark at full size.
  */
 const draw = (size, { inset = 1 } = {}) => {
   const buf = Buffer.alloc(size * size * 4);
@@ -101,19 +105,10 @@ const draw = (size, { inset = 1 } = {}) => {
   // 100-unit field -> pixels, scaled about the centre
   const u = (v) => (50 + (v - 50) * inset) * (size / 100);
 
-  // blocky C
-  const [x0, x1, y0, y1, s] = [22, 78, 13, 67, 13];
+  const [x0, x1, y0, y1, s] = [20, 80, 20, 80, 15];
   rect(buf, size, u(x0), u(y0), u(x0 + s), u(y1), INK); // spine
   rect(buf, size, u(x0), u(y0), u(x1), u(y0 + s), INK); // top arm
   rect(buf, size, u(x0), u(y1 - s), u(x1), u(y1), INK); // bottom arm
-
-  // four-segment progress bar, segments 1 and 3 complete
-  const gap = 3;
-  const segW = (x1 - x0 - gap * 3) / 4;
-  for (let i = 0; i < 4; i++) {
-    const sx = x0 + i * (segW + gap);
-    rect(buf, size, u(sx), u(78), u(sx + segW), u(88), i % 2 === 0 ? INK : DIM);
-  }
 
   return encodePng(size, buf);
 };
@@ -123,9 +118,9 @@ mkdirSync(OUT, { recursive: true });
 const files = [
   ['icon-192.png', 192, {}],
   ['icon-512.png', 512, {}],
-  ['icon-192-maskable.png', 192, { inset: 0.72 }],
-  ['icon-512-maskable.png', 512, { inset: 0.72 }],
-  ['apple-touch-icon.png', 180, { inset: 0.86 }],
+  ['icon-192-maskable.png', 192, { inset: 0.88 }],
+  ['icon-512-maskable.png', 512, { inset: 0.88 }],
+  ['apple-touch-icon.png', 180, {}],
   ['favicon-32.png', 32, {}],
   ['favicon-16.png', 16, {}],
 ];
