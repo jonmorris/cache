@@ -97,7 +97,8 @@ export function SettingsScreen({ lists, settings, onTheme, onRestore }: Settings
           <Row label="Storage" value="On device" />
           <Row label="Accounts" value="None" />
           <Row label="Expires" value="At its deadline" />
-          <Row label="Max items" value={`${MAX_ITEMS} per day`} />
+          <Row label="Max tasks" value={`${MAX_ITEMS} per day`} />
+          <Row label="Transit" value="Uncapped" />
           <Row label="Horizon" value={`${MAX_DAYS_AHEAD} days ahead`} />
           <Row label="Version" value={APP_VERSION} />
         </div>

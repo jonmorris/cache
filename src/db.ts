@@ -1,4 +1,11 @@
-import { DEFAULT_SETTINGS, readProgress, type Item, type List, type Settings } from './types';
+import {
+  DEFAULT_SETTINGS,
+  readKind,
+  readProgress,
+  type Item,
+  type List,
+  type Settings,
+} from './types';
 
 const DB_NAME = 'cache';
 /** v2 keys lists by date; v1 held a single list at the fixed key 'current'. */
@@ -74,6 +81,7 @@ const readItem = (raw: Item & { done?: boolean }): Item => ({
   name: raw.name,
   minutes: raw.minutes,
   progress: readProgress(raw as unknown as Record<string, unknown>, raw.minutes),
+  kind: readKind(raw as unknown as Record<string, unknown>),
   createdAt: raw.createdAt,
 });
 

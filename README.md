@@ -17,7 +17,8 @@ walking there.
 | | |
 | --- | --- |
 | Lists | one per day, today to +7 |
-| Items per list | up to 7 |
+| Tasks per list | up to 7 |
+| Transit legs | uncapped — they do not spend a slot |
 | Estimate per item | 5 or 10 minutes, then quarter-hours to 2 hours |
 | Half done | available on items of 30 minutes or more |
 | Day horizon | today to +7 days |
@@ -43,15 +44,40 @@ telling the truth. (Arrow keys work on a focused grip too.) A list set for a
 future day is visible and editable, but its items cannot be ticked off until its
 day arrives.
 
+## Tasks and transit
+
+Every item is a **task** or a **transit** leg, picked when you add it and
+defaulting to task. Transit is the getting between the work. It takes an
+estimate, ticks off, halves, drags and deletes exactly as a task does, and its
+time counts in every figure on the HUD — because it costs the day just the same.
+
+The one difference is the cap: **transit does not spend one of the seven**. A
+day with four things to do and three journeys between them is still a four-task
+day, and capping the journeys would mean choosing between planning the travel
+and planning the work at the end of it. So the seven stays the honest count of
+what you took on.
+
+Transit rows are set back — indented, quieter, led by an arrow — so the tasks
+still read as the spine of the day and the journeys hang off it. In the progress
+bar a transit segment keeps its full width, since one equal segment per item is
+the whole premise, and is set back by height instead.
+
+Once the seven tasks are used the add row stays live and offers transit rather
+than going dead; the sheet refuses a task and says why. Editing an item can
+change its kind, so a mis-picked row is corrected rather than deleted and
+retyped — except promoting transit to a task when the seven are already used,
+which is the one thing the cap has to refuse.
+
+## The HUD
+
 The HUD holds the whole situation: the two times, five figures, and the clock.
 The figures read as two pairs, work on the left and time on the right.
 **Planned** against **window** is what you set out to do against the hours you
 gave yourself — neither moves as you work, only as you edit the list or the
-times. **To do** against
-**available** is that same question now: the work still open against what is
-left of the window. **Slack** is the difference between the second pair, and
-runs the full width beneath them because it is what the rest add up to; on
-screen, available less to do is exactly slack.
+times. **To do** against **available** is that same question now: the work still
+open against what is left of the window. **Slack** is the difference between the
+second pair, and runs the full width beneath them because it is what the rest
+add up to; on screen, available less to do is exactly slack.
 
 The two pairs move independently, which is the point of showing both. Ticking
 an item moves **to do** and leaves **available** alone; time passing moves

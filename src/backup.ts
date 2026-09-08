@@ -2,6 +2,7 @@ import {
   DEFAULT_SETTINGS,
   DURATIONS,
   MAX_ITEMS,
+  readKind,
   readProgress,
   type Backup,
   type Item,
@@ -70,16 +71,21 @@ export function parseBackup(text: string): Backup {
     if (seen.has(entry.date)) continue;
     seen.add(entry.date);
 
+    // The cap counts tasks only, so a backup is trimmed by dropping tasks past
+    // the seventh while every transit leg comes back — slicing the array flat
+    // would silently lose the journeys between the work.
+    let tasks = 0;
     const items: Item[] = (Array.isArray(entry.items) ? entry.items : [])
       .filter(isRecord)
-      .slice(0, MAX_ITEMS)
       .map((it) => ({
         id: typeof it.id === 'string' && it.id ? it.id : crypto.randomUUID(),
         name: String(it.name ?? '').slice(0, 120).trim() || 'Untitled',
         minutes: nearestDuration(it.minutes),
         progress: readProgress(it, nearestDuration(it.minutes)),
+        kind: readKind(it),
         createdAt: typeof it.createdAt === 'number' ? it.createdAt : Date.now(),
-      }));
+      }))
+      .filter((it) => it.kind === 'transit' || ++tasks <= MAX_ITEMS);
 
     lists.push({
       date: entry.date,

@@ -5,7 +5,7 @@ import { Hud } from '../components/Hud';
 import { ItemList } from '../components/ItemList';
 import { ItemSheet } from '../components/ItemSheet';
 import { ScheduleSheet } from '../components/ScheduleSheet';
-import { MAX_ITEMS, type Item, type List } from '../types';
+import { MAX_ITEMS, tasksFull, type Item, type Kind, type List } from '../types';
 import { dayLabel, deadlineLabel, isPending, pickerName } from '../time';
 
 interface ListScreenProps {
@@ -17,8 +17,8 @@ interface ListScreenProps {
   onPickDay: (date: string) => void;
   onSchedule: (start: string, deadline: string) => void;
   onDiscard: () => void;
-  onAddItem: (name: string, minutes: number) => void;
-  onSaveItem: (id: string, name: string, minutes: number) => void;
+  onAddItem: (name: string, minutes: number, kind: Kind) => void;
+  onSaveItem: (id: string, name: string, minutes: number, kind: Kind) => void;
   onToggleItem: (id: string) => void;
   onDeleteItem: (id: string) => void;
   onReorder: (from: number, to: number) => void;
@@ -33,7 +33,10 @@ export function ListScreen(props: ListScreenProps) {
   const [pendingDelete, setPendingDelete] = useState<Item | null>(null);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
 
-  const full = (list?.items.length ?? 0) >= MAX_ITEMS;
+  const items = list?.items ?? [];
+  // The cap counts tasks only, so a full list still takes transit — the add
+  // row stays live and the sheet is what refuses an eighth task.
+  const full = tasksFull(items);
   const locked = list ? isPending(list, now) : false;
 
   return (
@@ -64,7 +67,7 @@ export function ListScreen(props: ListScreenProps) {
 
           {list.items.length === 0 ? (
             <p className="foot-note" style={{ textAlign: 'center', marginTop: 18 }}>
-              No items yet · up to {MAX_ITEMS}
+              No items yet · up to {MAX_ITEMS} tasks, transit on top
             </p>
           ) : (
             <ItemList
@@ -77,8 +80,8 @@ export function ListScreen(props: ListScreenProps) {
             />
           )}
 
-          <button className="addrow" disabled={full} onClick={() => setItemSheet({ mode: 'add' })}>
-            {full ? `List full · ${MAX_ITEMS}/${MAX_ITEMS} items` : '+ Add item'}
+          <button className="addrow" data-full={full} onClick={() => setItemSheet({ mode: 'add' })}>
+            {full ? `Tasks full · ${MAX_ITEMS}/${MAX_ITEMS} · add transit` : '+ Add item'}
           </button>
 
           <div className="listfoot">
@@ -109,9 +112,11 @@ export function ListScreen(props: ListScreenProps) {
         mode={itemSheet?.mode ?? 'add'}
         initialName={itemSheet?.mode === 'edit' ? itemSheet.item.name : ''}
         initialMinutes={itemSheet?.mode === 'edit' ? itemSheet.item.minutes : 30}
-        onSubmit={(name, minutes) => {
-          if (itemSheet?.mode === 'edit') props.onSaveItem(itemSheet.item.id, name, minutes);
-          else props.onAddItem(name, minutes);
+        initialKind={itemSheet?.mode === 'edit' ? itemSheet.item.kind : 'task'}
+        tasksFull={full}
+        onSubmit={(name, minutes, kind) => {
+          if (itemSheet?.mode === 'edit') props.onSaveItem(itemSheet.item.id, name, minutes, kind);
+          else props.onAddItem(name, minutes, kind);
           setItemSheet(null);
         }}
         onClose={() => setItemSheet(null)}

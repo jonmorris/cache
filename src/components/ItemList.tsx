@@ -92,6 +92,7 @@ export function ItemList({ items, lockTicking, onReorder, onToggle, onEdit, onDe
           key={item.id}
           className="item"
           data-progress={item.progress}
+          data-kind={item.kind}
           data-dragging={drag?.from === index}
           ref={(el) => {
             if (el) rows.current.set(item.id, el);
@@ -121,7 +122,16 @@ export function ItemList({ items, lockTicking, onReorder, onToggle, onEdit, onDe
           >
             {GLYPH[item.progress]}
           </button>
-          <button className="item-main" onClick={() => onEdit(item)} aria-label={`Edit ${item.name}`}>
+          <button
+            className="item-main"
+            onClick={() => onEdit(item)}
+            aria-label={`Edit ${item.kind === 'transit' ? 'transit: ' : ''}${item.name}`}
+          >
+            {item.kind === 'transit' && (
+              <span className="item-lead" aria-hidden="true">
+                →
+              </span>
+            )}
             <span className="item-name">{item.name}</span>
             <span className="item-dur">{duration(item.minutes)}</span>
           </button>

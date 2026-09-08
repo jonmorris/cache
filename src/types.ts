@@ -1,13 +1,26 @@
 /** 0 not started, 0.5 half done, 1 done. Halves only on long enough items. */
 export type Progress = 0 | 0.5 | 1;
 
+/**
+ * Tasks are the work you chose; transit is the getting between it. Both carry
+ * an estimate and both are ticked off, because both consume the day — only the
+ * seven-item cap tells them apart.
+ */
+export type Kind = 'task' | 'transit';
+
 export interface Item {
   id: string;
   name: string;
   /** Estimated duration in minutes. Always one of DURATIONS. */
   minutes: number;
   progress: Progress;
+  kind: Kind;
   createdAt: number;
+}
+
+/** Reads the kind off a stored or imported item; anything unknown is a task. */
+export function readKind(raw: Record<string, unknown>): Kind {
+  return raw.kind === 'transit' ? 'transit' : 'task';
 }
 
 /** Items at least this long can be marked half done. */
@@ -73,6 +86,15 @@ export const APP_VERSION = '1.0.0';
 
 export const MAX_ITEMS = 7;
 export const MAX_DAYS_AHEAD = 7;
+
+/**
+ * Only tasks count against the cap. Transit is overhead the day imposes rather
+ * than something chosen, so capping it would mean choosing between planning a
+ * journey and planning the work at the end of it.
+ */
+export const taskCount = (items: Item[]) => items.filter((i) => i.kind === 'task').length;
+
+export const tasksFull = (items: Item[]) => taskCount(items) >= MAX_ITEMS;
 
 /** Two short options for quick jobs, then quarter-hours up to 2 hours. */
 export const DURATIONS = [5, 10, 15, 30, 45, 60, 75, 90, 105, 120] as const;

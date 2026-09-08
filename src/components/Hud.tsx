@@ -10,7 +10,7 @@ import {
   windowMs,
 } from '../time';
 import { Progress } from './Progress';
-import { MAX_ITEMS, type List } from '../types';
+import { MAX_ITEMS, taskCount, type List } from '../types';
 
 interface HudProps {
   list: List;
@@ -41,6 +41,9 @@ export function Hud({ list, onEditTimes }: HudProps) {
   );
   const done = list.items.filter((i) => i.progress === 1).length;
   const half = list.items.filter((i) => i.progress === 0.5).length;
+  // Only tasks are capped, so the tally counts them and notes transit beside it.
+  const tasks = taskCount(list.items);
+  const transit = list.items.length - tasks;
 
   /*
    * The second hand lives here rather than in App: only this panel changes
@@ -144,7 +147,7 @@ export function Hud({ list, onEditTimes }: HudProps) {
               {done}/{list.items.length} done{half > 0 ? ` · ${half} half` : ''}
             </span>
             <span>
-              {list.items.length}/{MAX_ITEMS} items
+              {tasks}/{MAX_ITEMS} tasks{transit > 0 ? ` +${transit}` : ''}
             </span>
           </p>
         </div>

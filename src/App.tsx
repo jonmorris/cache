@@ -8,10 +8,11 @@ import {
   canHalve,
   DEFAULT_SETTINGS,
   MAX_DAYS_AHEAD,
-  MAX_ITEMS,
   nextProgress,
+  tasksFull,
   type Backup,
   type Item,
+  type Kind,
   type List,
   type Settings,
   type ThemeMode,
@@ -159,16 +160,18 @@ export function App() {
       return next;
     });
 
-  const onAddItem = (name: string, minutes: number) => {
+  const onAddItem = (name: string, minutes: number, kind: Kind) => {
     const item: Item = {
       id: crypto.randomUUID(),
       name,
       minutes,
       progress: 0,
+      kind,
       createdAt: Date.now(),
     };
     update(cursor, (current) =>
-      current.items.length >= MAX_ITEMS
+      // Transit is never blocked; only a task can fill the list.
+      kind === 'task' && tasksFull(current.items)
         ? current
         : { ...current, items: [...current.items, item] },
     );
@@ -179,7 +182,7 @@ export function App() {
     items: current.items.map(fn),
   });
 
-  const onSaveItem = (id: string, name: string, minutes: number) =>
+  const onSaveItem = (id: string, name: string, minutes: number, kind: Kind) =>
     update(cursor, (current) =>
       mapItems(current, (i) =>
         i.id === id
@@ -187,6 +190,10 @@ export function App() {
               ...i,
               name,
               minutes,
+              // Promoting transit to a task can only ever be refused by the
+              // cap, and the sheet already disables it there; refuse again
+              // here so no other path can slip an eighth task in.
+              kind: kind === 'task' && i.kind !== 'task' && tasksFull(current.items) ? i.kind : kind,
               // Re-estimating below the half threshold leaves a half with
               // nowhere to live. Drop it rather than claim the work is done.
               progress: i.progress === 0.5 && !canHalve(minutes) ? 0 : i.progress,
