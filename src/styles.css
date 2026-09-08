@@ -638,21 +638,23 @@ ul {
 }
 
 /* Transit is set back: indented, quieter, and led by an arrow, so the tasks
-   still read as the spine of the day and the journeys hang off it. Everything
-   else about the row — tick, estimate, grip, delete — is unchanged. */
+   still read as the spine of the day and the journeys hang off it.
+
+   The set-back starts at the tick, not the row. Grip and delete are controls
+   rather than content, so they stay in the column they occupy on every other
+   row and the drag target never moves. */
 .item[data-kind='transit'] {
-  padding-left: 20px;
   border-bottom-style: dotted;
+}
+
+.item[data-kind='transit'] .tick {
+  margin-left: 20px;
+  transform: scale(0.88);
 }
 
 .item[data-kind='transit'] .item-name {
   font-size: 13px;
   color: var(--dim);
-}
-
-.item[data-kind='transit'] .tick,
-.item[data-kind='transit'] .grip {
-  transform: scale(0.88);
 }
 
 .item-lead {
