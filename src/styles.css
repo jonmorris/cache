@@ -439,14 +439,19 @@ ul {
   color: var(--warn);
 }
 
+/* State colours are set per element. The bar is tinted by its background, the
+   readouts by their text colour — setting both on one grouped selector once
+   painted the countdown a solid block of its own colour. */
 .hud[data-state='over'] {
   border-color: var(--warn);
 }
 
-.hud[data-state='over'] .hud-clock-value,
-.hud[data-state='over'] .hud-bar-fill {
+.hud[data-state='over'] .hud-clock-value {
   color: var(--warn);
-  background-color: var(--warn);
+}
+
+.hud[data-state='over'] .hud-bar-fill {
+  background: var(--warn);
 }
 
 .hud[data-state='soon'] {
@@ -454,24 +459,7 @@ ul {
 }
 
 .hud[data-state='soon'] .hud-clock-value,
-.hud[data-state='soon'] .hud-items {
-  display: grid;
-  gap: 6px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--rule-strong);
-}
-
-.hud-counts {
-  display: flex;
-  justify-content: space-between;
-  margin: 0;
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--faint);
-}
-
-.hud-note {
+.hud[data-state='soon'] .hud-note {
   color: var(--danger);
 }
 
