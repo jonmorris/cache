@@ -27,8 +27,13 @@ const MINUTE = 60_000;
  */
 export function Hud({ list, onEditTimes }: HudProps) {
   const planned = list.items.reduce((sum, i) => sum + i.minutes, 0);
-  const remaining = list.items.reduce((sum, i) => (i.done ? sum : sum + i.minutes), 0);
-  const done = list.items.filter((i) => i.done).length;
+  // Rounded once over the whole sum: halving an odd estimate (0:45, 1:15,
+  // 1:45) leaves a half minute that should not compound across items.
+  const remaining = Math.round(
+    list.items.reduce((sum, i) => sum + i.minutes * (1 - i.progress), 0),
+  );
+  const done = list.items.filter((i) => i.progress === 1).length;
+  const half = list.items.filter((i) => i.progress === 0.5).length;
 
   /*
    * The second hand lives here rather than in App: only this panel changes
@@ -107,7 +112,7 @@ export function Hud({ list, onEditTimes }: HudProps) {
           <Progress items={list.items} />
           <p className="hud-counts">
             <span>
-              {done}/{list.items.length} done
+              {done}/{list.items.length} done{half > 0 ? ` · ${half} half` : ''}
             </span>
             <span>
               {list.items.length}/{MAX_ITEMS} items

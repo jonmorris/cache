@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, type List, type Settings } from './types';
+import { DEFAULT_SETTINGS, readProgress, type Item, type List, type Settings } from './types';
 
 const DB_NAME = 'cache';
 /** v2 keys lists by date; v1 held a single list at the fixed key 'current'. */
@@ -64,10 +64,25 @@ function run<T>(store: string, mode: IDBTransactionMode, fn: (s: IDBObjectStore)
   );
 }
 
+/**
+ * Items stored before half-done existed carry a `done` boolean; they are read
+ * forward here rather than through a schema migration, since a list lives at
+ * most eight days and the next edit writes the new shape back.
+ */
+const readItem = (raw: Item & { done?: boolean }): Item => ({
+  id: raw.id,
+  name: raw.name,
+  minutes: raw.minutes,
+  progress: readProgress(raw as unknown as Record<string, unknown>, raw.minutes),
+  createdAt: raw.createdAt,
+});
+
 /** Every stored list, keyed by its date. */
 export const getLists = () =>
   run<List[]>(DAYS, 'readonly', (s) => s.getAll()).then((rows) =>
-    Object.fromEntries(rows.map((list) => [list.date, list])),
+    Object.fromEntries(
+      rows.map((list) => [list.date, { ...list, items: (list.items ?? []).map(readItem) }]),
+    ),
   );
 
 export const putList = (list: List) => run(DAYS, 'readwrite', (s) => s.put(list)).then(() => {});

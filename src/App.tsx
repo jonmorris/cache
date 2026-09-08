@@ -5,9 +5,11 @@ import { SettingsScreen } from './screens/SettingsScreen';
 import * as db from './db';
 import { addDays, expiresAt, todayISO } from './time';
 import {
+  canHalve,
   DEFAULT_SETTINGS,
   MAX_DAYS_AHEAD,
   MAX_ITEMS,
+  nextProgress,
   type Backup,
   type Item,
   type List,
@@ -162,8 +164,7 @@ export function App() {
       id: crypto.randomUUID(),
       name,
       minutes,
-      done: false,
-      doneAt: null,
+      progress: 0,
       createdAt: Date.now(),
     };
     update(cursor, (current) =>
@@ -179,16 +180,25 @@ export function App() {
   });
 
   const onSaveItem = (id: string, name: string, minutes: number) =>
-    update(cursor, (current) => mapItems(current, (i) => (i.id === id ? { ...i, name, minutes } : i)));
-
-  const onToggleItem = (id: string) => {
-    const at = Date.now();
     update(cursor, (current) =>
       mapItems(current, (i) =>
-        i.id === id ? { ...i, done: !i.done, doneAt: i.done ? null : at } : i,
+        i.id === id
+          ? {
+              ...i,
+              name,
+              minutes,
+              // Re-estimating below the half threshold leaves a half with
+              // nowhere to live. Drop it rather than claim the work is done.
+              progress: i.progress === 0.5 && !canHalve(minutes) ? 0 : i.progress,
+            }
+          : i,
       ),
     );
-  };
+
+  const onToggleItem = (id: string) =>
+    update(cursor, (current) =>
+      mapItems(current, (i) => (i.id === id ? { ...i, progress: nextProgress(i) } : i)),
+    );
 
   const onDeleteItem = (id: string) =>
     update(cursor, (current) => ({ ...current, items: current.items.filter((i) => i.id !== id) }));

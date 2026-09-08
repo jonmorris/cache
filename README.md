@@ -18,6 +18,7 @@ walking there.
 | Lists | one per day, today to +7 |
 | Items per list | up to 7 |
 | Estimate per item | 5 or 10 minutes, then quarter-hours to 2 hours |
+| Half done | available on items of 30 minutes or more |
 | Day horizon | today to +7 days |
 | Deadline | any time on that day, required |
 | Start | derived, never asked for |
@@ -28,6 +29,12 @@ walking there.
 of the items still open. The progress bar has one equal segment per item, in list
 order — tick the fourth thing first and the fourth segment fills, so the bar
 shows *which* things are done rather than just how many.
+
+Items of **30 minutes or more** take a half step: the box cycles empty, half
+done, done. A half credits half the estimate, so **to do**, **slack** and
+**start by** all move by half the item, and its progress segment fills halfway.
+Shorter items toggle straight to done. Re-estimating a half-done item below
+thirty minutes drops the half rather than claiming the work is finished.
 
 Ticked items stay on the list, struck through and faded. Drag a row by its grip
 to reorder it — the progress segments travel with their items, so the bar keeps

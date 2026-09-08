@@ -1,11 +1,37 @@
+/** 0 not started, 0.5 half done, 1 done. Halves only on long enough items. */
+export type Progress = 0 | 0.5 | 1;
+
 export interface Item {
   id: string;
   name: string;
   /** Estimated duration in minutes. Always one of DURATIONS. */
   minutes: number;
-  done: boolean;
-  doneAt: number | null;
+  progress: Progress;
   createdAt: number;
+}
+
+/** Items at least this long can be marked half done. */
+export const HALF_MIN = 30;
+
+export const canHalve = (minutes: number) => minutes >= HALF_MIN;
+
+/** Tapping cycles: long items through a half step, short ones straight to done. */
+export function nextProgress(item: Pick<Item, 'minutes' | 'progress'>): Progress {
+  if (!canHalve(item.minutes)) return item.progress === 1 ? 0 : 1;
+  if (item.progress === 0) return 0.5;
+  return item.progress === 0.5 ? 1 : 0;
+}
+
+/**
+ * Reads progress from a stored or imported item. Accepts the older `done`
+ * boolean, and refuses a half on an item too short to hold one.
+ */
+export function readProgress(raw: Record<string, unknown>, minutes: number): Progress {
+  const value =
+    typeof raw.progress === 'number' ? raw.progress : raw.done === true ? 1 : 0;
+  if (value >= 1) return 1;
+  if (value >= 0.5 && canHalve(minutes)) return 0.5;
+  return 0;
 }
 
 export interface List {

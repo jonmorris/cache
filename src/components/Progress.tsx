@@ -6,12 +6,19 @@ import type { Item } from '../types';
  * shows which things are done, not just how many.
  */
 export function Progress({ items }: { items: Item[] }) {
-  const done = items.filter((i) => i.done).length;
+  const done = items.filter((i) => i.progress === 1).length;
+  const half = items.filter((i) => i.progress === 0.5).length;
 
   return (
-    <div className="segments" role="img" aria-label={`${done} of ${items.length} items done`}>
+    <div
+      className="segments"
+      role="img"
+      aria-label={`${done} of ${items.length} items done${half ? `, ${half} half done` : ''}`}
+    >
       {items.map((item) => (
-        <span key={item.id} className="seg" data-done={item.done} />
+        <span key={item.id} className="seg" data-progress={item.progress}>
+          <span className="seg-fill" />
+        </span>
       ))}
     </div>
   );

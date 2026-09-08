@@ -2,6 +2,7 @@ import {
   DEFAULT_SETTINGS,
   DURATIONS,
   MAX_ITEMS,
+  readProgress,
   type Backup,
   type Item,
   type List,
@@ -76,8 +77,7 @@ export function parseBackup(text: string): Backup {
         id: typeof it.id === 'string' && it.id ? it.id : crypto.randomUUID(),
         name: String(it.name ?? '').slice(0, 120).trim() || 'Untitled',
         minutes: nearestDuration(it.minutes),
-        done: it.done === true,
-        doneAt: typeof it.doneAt === 'number' ? it.doneAt : it.done === true ? Date.now() : null,
+        progress: readProgress(it, nearestDuration(it.minutes)),
         createdAt: typeof it.createdAt === 'number' ? it.createdAt : Date.now(),
       }));
 

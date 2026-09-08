@@ -1,7 +1,10 @@
 import { useRef, useState } from 'react';
 import { Grip } from './Grip';
 import { duration } from '../time';
-import type { Item } from '../types';
+import { canHalve, nextProgress, type Item } from '../types';
+
+const GLYPH: Record<number, string> = { 0: '[ ]', 0.5: '[/]', 1: '[x]' };
+const STATE: Record<number, string> = { 0: 'not started', 0.5: 'half done', 1: 'done' };
 
 interface ItemListProps {
   items: Item[];
@@ -88,7 +91,7 @@ export function ItemList({ items, lockTicking, onReorder, onToggle, onEdit, onDe
         <li
           key={item.id}
           className="item"
-          data-done={item.done}
+          data-progress={item.progress}
           data-dragging={drag?.from === index}
           ref={(el) => {
             if (el) rows.current.set(item.id, el);
@@ -111,10 +114,12 @@ export function ItemList({ items, lockTicking, onReorder, onToggle, onEdit, onDe
             className="tick"
             onClick={() => onToggle(item.id)}
             disabled={lockTicking}
-            aria-pressed={item.done}
-            aria-label={`${item.done ? 'Not done' : 'Done'}: ${item.name}`}
+            aria-label={`${item.name}: ${STATE[item.progress]}. Tap to mark ${
+              STATE[nextProgress(item)]
+            }.`}
+            title={canHalve(item.minutes) ? 'Tap through half done, then done' : undefined}
           >
-            {item.done ? '[x]' : '[ ]'}
+            {GLYPH[item.progress]}
           </button>
           <button className="item-main" onClick={() => onEdit(item)} aria-label={`Edit ${item.name}`}>
             <span className="item-name">{item.name}</span>

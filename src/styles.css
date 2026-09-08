@@ -483,11 +483,27 @@ ul {
   height: 14px;
   border: 1px solid var(--rule-strong);
   background: transparent;
+  overflow: hidden;
 }
 
-.seg[data-done='true'] {
+.seg-fill {
+  display: block;
+  height: 100%;
+  width: 0;
   background: var(--accent);
+  transition: width 180ms ease;
+}
+
+.seg[data-progress='0.5'] .seg-fill {
+  width: 50%;
+}
+
+.seg[data-progress='1'] {
   border-color: var(--accent);
+}
+
+.seg[data-progress='1'] .seg-fill {
+  width: 100%;
 }
 
 /* ---------- items ---------- */
@@ -549,7 +565,8 @@ ul {
   color: var(--dim);
 }
 
-.item[data-done='true'] .tick {
+.item[data-progress='0.5'] .tick,
+.item[data-progress='1'] .tick {
   color: var(--accent);
 }
 
@@ -581,18 +598,24 @@ ul {
   color: var(--dim);
 }
 
-.item[data-done='true'] .item-name {
+.item[data-progress='1'] .item-name {
   text-decoration: line-through;
   text-decoration-thickness: 1px;
   color: var(--faint);
 }
 
-.item[data-done='true'] .item-dur {
+.item[data-progress='1'] .item-dur {
   color: var(--faint);
 }
 
-.item[data-done='true'] {
+.item[data-progress='1'] {
   opacity: 0.72;
+}
+
+/* Half done is in progress, not finished: no strike, no fade — only the tick
+   and its segment say so. */
+.item[data-progress='0.5'] .item-dur {
+  color: var(--accent);
 }
 
 /* The dragged row tracks the finger exactly — no easing — and must read as
