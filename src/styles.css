@@ -66,6 +66,25 @@ body.no-scroll {
   overflow: hidden;
 }
 
+/*
+ * Installed on iOS the app runs under a translucent status bar whose text iOS
+ * always draws white, so on the light theme it would be white on cream. This
+ * strip keeps that area dark whatever the theme. It has height only where a
+ * safe-area inset exists — standalone — so in a browser tab it is not there at
+ * all. Above the sheets, since their scrim alone is too pale to carry it.
+ */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  background: #0b0b0c;
+  z-index: 200;
+  pointer-events: none;
+}
+
 button {
   font: inherit;
   color: inherit;
@@ -386,9 +405,9 @@ ul {
   font-variant-numeric: tabular-nums;
 }
 
-.hud-stat[data-tone='warn'] .hud-stat-value,
-.hud-stat[data-tone='warn'] .hud-stat-label {
-  color: var(--warn);
+.hud-stat[data-tone='bad'] .hud-stat-value,
+.hud-stat[data-tone='bad'] .hud-stat-label {
+  color: var(--danger);
 }
 
 .hud-clock {
@@ -440,35 +459,37 @@ ul {
   font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--warn);
+  color: var(--danger);
 }
 
 /* State colours are set per element. The bar is tinted by its background, the
    readouts by their text colour — setting both on one grouped selector once
-   painted the countdown a solid block of its own colour. */
+   painted the countdown a solid block of its own colour.
+
+   Terracotta marks the problem: the work no longer fits before the deadline.
+   Amber is the lesser signal, that the deadline is merely close. */
 .hud[data-state='over'] {
-  border-color: var(--warn);
-}
-
-.hud[data-state='over'] .hud-clock-value {
-  color: var(--warn);
-}
-
-.hud[data-state='over'] .hud-bar-fill {
-  background: var(--warn);
-}
-
-.hud[data-state='soon'] {
   border-color: var(--danger);
 }
 
-.hud[data-state='soon'] .hud-clock-value,
-.hud[data-state='soon'] .hud-note {
+.hud[data-state='over'] .hud-clock-value {
   color: var(--danger);
 }
 
-.hud[data-state='soon'] .hud-bar-fill {
+.hud[data-state='over'] .hud-bar-fill {
   background: var(--danger);
+}
+
+.hud[data-state='soon'] {
+  border-color: var(--warn);
+}
+
+.hud[data-state='soon'] .hud-clock-value {
+  color: var(--warn);
+}
+
+.hud[data-state='soon'] .hud-bar-fill {
+  background: var(--warn);
 }
 
 /* ---------- progress segments ---------- */

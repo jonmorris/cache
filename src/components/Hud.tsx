@@ -63,15 +63,17 @@ export function Hud({ list, onEditTimes }: HudProps) {
 
   const left = availableMs(list, now);
   const slack = Math.round((left - remaining * MINUTE) / MINUTE);
-  const soon = left <= 15 * MINUTE;
+  // Over is the problem: the work no longer fits. Soon is only a nudge that
+  // the deadline is close, which is fine if there is nothing left to do.
   const over = slack < 0;
+  const soon = !over && left <= 15 * MINUTE;
 
   /* Pressure: how much of the time left is already spoken for. Full means you
      are at the last moment you could start; past full, you are behind. */
   const committed = left > 0 ? Math.min(1, (remaining * MINUTE) / left) : 1;
 
   return (
-    <section className="hud" data-state={soon ? 'soon' : over ? 'over' : 'ok'}>
+    <section className="hud" data-state={over ? 'over' : soon ? 'soon' : 'ok'}>
       <button className="hud-window" onClick={onEditTimes} aria-label="Change the deadline">
         <span className="hud-label">Due</span>
         <span className="hud-time">{deadlineLabel(list)}</span>
@@ -93,10 +95,10 @@ export function Hud({ list, onEditTimes }: HudProps) {
         <Stat
           label="Start by"
           value={startByLabel(list, remaining)}
-          tone={over ? 'warn' : undefined}
+          tone={over ? 'bad' : undefined}
         />
         <Stat label="To do" value={duration(remaining)} />
-        <Stat label="Slack" value={signedDuration(slack)} tone={over ? 'warn' : undefined} />
+        <Stat label="Slack" value={signedDuration(slack)} tone={over ? 'bad' : undefined} />
       </div>
 
       <div className="hud-clock">
@@ -124,7 +126,7 @@ export function Hud({ list, onEditTimes }: HudProps) {
   );
 }
 
-function Stat({ label, value, tone }: { label: string; value: string; tone?: 'warn' }) {
+function Stat({ label, value, tone }: { label: string; value: string; tone?: 'bad' }) {
   return (
     <div className="hud-stat" data-tone={tone}>
       <span className="hud-stat-label">{label}</span>

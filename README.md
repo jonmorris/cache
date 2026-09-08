@@ -46,9 +46,10 @@ The HUD holds the whole situation: the deadline, four figures, and the clock.
 **Planned** is every item; **to do** is what is still open; **start by** is the
 latest you can begin and still finish, which is the deadline less the work left
 — derived rather than asked for, and moving later as you tick things off;
-**slack** is the time left minus the work left. Slack going negative turns the
-panel amber and says how far over you are; inside the last fifteen minutes it
-turns red. The bar shows how much of the time left the outstanding work already
+**slack** is the time left minus the work left. Slack going negative turns the panel
+**terracotta** and says how far over you are — that is the problem state, the
+work no longer fits. Amber is the lesser signal: the deadline is inside fifteen
+minutes, which matters only if something is still open. The bar shows how much of the time left the outstanding work already
 claims: full means you are at the last moment you could start.
 
 Clock times are 24-hour and durations are tabular, each in their own part of the
@@ -64,7 +65,14 @@ still in storage until it is deleted.
 ## Install it on your phone
 
 Open the site, then **Share → Add to Home Screen** (iOS) or **Install app**
-(Android). It runs standalone and works with no connection.
+(Android), and launch it from the icon rather than the browser. It runs
+standalone — no address bar, no toolbars — and works with no connection.
+
+Installed on iOS the app fills the screen under a translucent status bar whose
+text the system always draws white, so `body::before` keeps that strip dark
+whatever the theme; on the light theme it would otherwise be white on cream.
+The strip has height only where a safe-area inset exists, so it does not appear
+in a browser tab.
 
 ## First-time setup
 
