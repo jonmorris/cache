@@ -1110,6 +1110,11 @@ ul {
 }
 
 .kind-opt {
+  /* The base reset left-aligns every button; the theme picker's `.segmented
+     button` used to centre these back, and renaming off it took that with it. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-height: var(--tap);
   border: 1px solid var(--rule-strong);
   font-size: 12px;
