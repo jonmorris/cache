@@ -107,11 +107,11 @@ export function App() {
     void db.putSettings(next).catch(() => {});
   }, []);
 
-  const onSchedule = (date: string, deadline: string) =>
+  const onSchedule = (date: string, start: string, deadline: string) =>
     setList((current) =>
       current
-        ? { ...current, date, deadline }
-        : { id: 'current', date, deadline, createdAt: Date.now(), items: [] },
+        ? { ...current, date, start, deadline }
+        : { id: 'current', date, start, deadline, createdAt: Date.now(), items: [] },
     );
 
   const onReorder = (from: number, to: number) =>

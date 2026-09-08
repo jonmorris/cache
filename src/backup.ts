@@ -36,6 +36,8 @@ const nearestDuration = (n: unknown) => {
 
 const THEMES: ThemeMode[] = ['system', 'light', 'dark'];
 
+const hhmm = (v: unknown) => (typeof v === 'string' && /^\d{2}:\d{2}$/.test(v) ? v : null);
+
 /**
  * Backup files are hand-editable and can come from an older version, so every
  * field is re-validated rather than trusted.
@@ -69,9 +71,10 @@ export function parseBackup(text: string): Backup {
     list = {
       id: 'current',
       date: raw.date,
-      // Backups predating deadlines restore without one and keep the old rule.
-      deadline:
-        typeof raw.deadline === 'string' && /^\d{2}:\d{2}$/.test(raw.deadline) ? raw.deadline : null,
+      // Backups predating these fields restore without them: no window, and the
+      // old 4am-next-morning rule.
+      start: hhmm(raw.start),
+      deadline: hhmm(raw.deadline),
       createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now(),
       items,
     };

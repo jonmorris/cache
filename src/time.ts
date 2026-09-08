@@ -1,7 +1,7 @@
 import type { List } from './types';
 
 /** The scheduling half of a list — all the date maths needs. */
-type Schedule = Pick<List, 'date' | 'deadline'>;
+type Schedule = Pick<List, 'date' | 'start' | 'deadline'>;
 
 /**
  * Fallback for lists written before deadlines existed: 04:00 on the morning
@@ -66,16 +66,42 @@ export function isExpired(list: Schedule, now: number = Date.now()): boolean {
   return now >= expiresAt(list);
 }
 
-/** "6:30 PM" from "18:30". */
-export function clockLabel(hhmm: string): string {
-  const [h, m] = hhmm.split(':').map(Number);
-  const suffix = h < 12 ? 'AM' : 'PM';
-  return `${h % 12 === 0 ? 12 : h % 12}:${pad(m)} ${suffix}`;
+/** Epoch ms when work is due to begin, or null on records with no start. */
+export function startsAt(list: Schedule): number | null {
+  return list.start ? timeOn(list.date, list.start) : null;
 }
 
-/** What the header shows as the moment of destruction. */
+/** The whole planned window, deadline minus start. */
+export function windowMs(list: Schedule): number | null {
+  const start = startsAt(list);
+  return start === null ? null : expiresAt(list) - start;
+}
+
+/**
+ * Time actually usable between now and the deadline. Bounded below by the
+ * start: hours before you begin are not hours you can spend.
+ */
+export function availableMs(list: Schedule, now: number): number {
+  const start = startsAt(list);
+  return expiresAt(list) - Math.max(now, start ?? now);
+}
+
+/** Signed slack, for a value that is meaningful in both directions. */
+export function signedDuration(minutes: number): string {
+  return (minutes < 0 ? '-' : '+') + duration(Math.abs(minutes));
+}
+
+/** What the HUD shows as the moment of destruction, 24-hour. */
 export function deadlineLabel(list: Schedule): string {
-  return list.deadline ? clockLabel(list.deadline) : expiryLabel(list);
+  return list.deadline ?? expiryLabel(list);
+}
+
+/** Work begins at the quarter hour you are already in, or 09:00 on a later day. */
+export function defaultStart(iso: string, now: number = Date.now()): string {
+  if (iso !== todayISO(now)) return '09:00';
+  const d = new Date(now);
+  d.setMinutes(Math.floor(d.getMinutes() / 15) * 15, 0, 0);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 /** Time remaining as a ticking clock: "04:12:38", or "2d 04:12:38" beyond a day. */
@@ -141,11 +167,8 @@ export function duration(minutes: number): string {
   return `${Math.floor(minutes / 60)}:${pad(minutes % 60)}`;
 }
 
-/** "TUE 4:00 AM" — when the list on screen disappears. */
+/** "WED 04:00" — when a list with no deadline of its own disappears. */
 export function expiryLabel(list: Schedule): string {
   const at = new Date(expiresAt(list));
-  const h = at.getHours();
-  const suffix = h < 12 ? 'AM' : 'PM';
-  const h12 = h % 12 === 0 ? 12 : h % 12;
-  return `${DAYS[at.getDay()]} ${h12}:${pad(at.getMinutes())} ${suffix}`;
+  return `${DAYS[at.getDay()]} ${pad(at.getHours())}:${pad(at.getMinutes())}`;
 }

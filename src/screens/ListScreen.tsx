@@ -1,17 +1,16 @@
 import { useState } from 'react';
 import { ConfirmSheet } from '../components/ConfirmSheet';
-import { Countdown } from '../components/Countdown';
+import { Hud } from '../components/Hud';
 import { ItemList } from '../components/ItemList';
 import { ItemSheet } from '../components/ItemSheet';
-import { Progress } from '../components/Progress';
 import { ScheduleSheet } from '../components/ScheduleSheet';
 import { MAX_ITEMS, type Item, type List } from '../types';
-import { dayLabel, deadlineLabel, duration, isPending, shortDate } from '../time';
+import { dayLabel, deadlineLabel, isPending, shortDate } from '../time';
 
 interface ListScreenProps {
   list: List | null;
   now: number;
-  onSchedule: (date: string, deadline: string) => void;
+  onSchedule: (date: string, start: string, deadline: string) => void;
   onDiscard: () => void;
   onAddItem: (name: string, minutes: number) => void;
   onSaveItem: (id: string, name: string, minutes: number) => void;
@@ -36,9 +35,10 @@ export function ListScreen(props: ListScreenProps) {
       cta={list ? 'Save' : 'Create'}
       now={now}
       date={list?.date ?? null}
+      start={list?.start ?? null}
       deadline={list?.deadline ?? null}
-      onSubmit={(date, deadline) => {
-        props.onSchedule(date, deadline);
+      onSubmit={(date, start, deadline) => {
+        props.onSchedule(date, start, deadline);
         setScheduling(false);
       }}
       onClose={() => setScheduling(false)}
@@ -63,9 +63,6 @@ export function ListScreen(props: ListScreenProps) {
     );
   }
 
-  const total = list.items.reduce((sum, i) => sum + i.minutes, 0);
-  const left = list.items.reduce((sum, i) => (i.done ? sum : sum + i.minutes), 0);
-  const doneCount = list.items.filter((i) => i.done).length;
   const full = list.items.length >= MAX_ITEMS;
   const locked = isPending(list, now);
 
@@ -87,42 +84,9 @@ export function ListScreen(props: ListScreenProps) {
           </p>
         )}
 
-        <div className="ledger">
-          <div className="ledger-row is-total">
-            <span>Estimated</span>
-            <span className="dots" aria-hidden="true" />
-            <span className="val">{duration(total)}</span>
-          </div>
-          <div className="ledger-row is-left">
-            <span>Remaining</span>
-            <span className="dots" aria-hidden="true" />
-            <span className="val">{duration(left)}</span>
-          </div>
-          <div className="ledger-row">
-            <span>Deadline</span>
-            <span className="dots" aria-hidden="true" />
-            <span className="val">{deadlineLabel(list)}</span>
-          </div>
-        </div>
+        <Hud list={list} />
 
-        <Countdown list={list} remaining={left} compare={!locked} />
-
-        {list.items.length > 0 && (
-          <div>
-            <Progress items={list.items} />
-            <p className="segments-note">
-              <span>
-                {doneCount}/{list.items.length} done
-              </span>
-              <span>
-                {list.items.length}/{MAX_ITEMS} items
-              </span>
-            </p>
-          </div>
-        )}
       </header>
-
-      <div className="rule" />
 
       {list.items.length === 0 ? (
         <p className="foot-note" style={{ textAlign: 'center' }}>

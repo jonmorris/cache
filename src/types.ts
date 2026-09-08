@@ -14,6 +14,13 @@ export interface List {
   /** Local calendar day the list is for, as YYYY-MM-DD. */
   date: string;
   /**
+   * Local wall-clock time on `date` when work begins, as HH:MM. With the
+   * deadline it forms the window the estimate has to fit into. May be in the
+   * past — you can already be underway. null only for records written before
+   * start times existed.
+   */
+  start: string | null;
+  /**
    * Local wall-clock time on `date` at which the list is destroyed, as HH:MM.
    * null only for lists written before deadlines existed; those keep the old
    * 4am-next-morning rule so no stored list or backup is stranded.
