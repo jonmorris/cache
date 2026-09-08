@@ -397,6 +397,11 @@ ul {
   padding-bottom: 3px;
 }
 
+/* Slack is the conclusion the two rows above lead to, so it gets the width. */
+.hud-stat.span {
+  grid-column: 1 / -1;
+}
+
 .hud-stat-label {
   font-size: 10px;
   letter-spacing: 0.16em;

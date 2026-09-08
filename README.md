@@ -43,16 +43,27 @@ telling the truth. (Arrow keys work on a focused grip too.) A list set for a
 future day is visible and editable, but its items cannot be ticked off until its
 day arrives.
 
-The HUD holds the whole situation: the two times, four figures, and the clock.
-**Planned** is every item; **window** is start to deadline, the hours you have
-given yourself; **to do** is what is still open; **slack** is the time left
-minus the work left, measured from the start until the start has gone by and
-from now afterwards. Slack going negative turns the panel **terracotta** and
-says how far over you are — that is the problem state, the work no longer fits.
-Amber is the lesser signal: the deadline is inside fifteen minutes, which
-matters only if something is still open. The bar shows how much of the time left
-the outstanding work already claims: full means you are at the last moment you
-could start.
+The HUD holds the whole situation: the two times, five figures, and the clock.
+The figures read as two pairs, work on the left and time on the right.
+**Planned** against **window** is what you set out to do against the hours you
+gave yourself — neither moves as you work, only as you edit the list or the
+times. **To do** against
+**available** is that same question now: the work still open against what is
+left of the window. **Slack** is the difference between the second pair, and
+runs the full width beneath them because it is what the rest add up to; on
+screen, available less to do is exactly slack.
+
+The two pairs move independently, which is the point of showing both. Ticking
+an item moves **to do** and leaves **available** alone; time passing moves
+**available** and leaves **to do** alone. Available holds at the full window
+until the start goes by and counts down to the deadline thereafter, so before
+you begin it reads the same as window — nothing has been spent yet.
+
+Slack going negative turns the panel **terracotta** and says how far over you
+are — that is the problem state, the work no longer fits. Amber is the lesser
+signal: the deadline is inside fifteen minutes, which matters only if something
+is still open. The bar shows how much of the time left the outstanding work
+already claims: full means you are at the last moment you could start.
 
 The clock counts down to the **start** while the start is still ahead, and to
 the **deadline** once it has gone by, so the panel always answers the question

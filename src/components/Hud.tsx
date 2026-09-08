@@ -27,8 +27,10 @@ const MINUTE = 60_000;
  * what made the old ledger jump around whenever a value changed shape. Times
  * are 24-hour so every glyph is the same width.
  *
- * Slack, not a separate figure, answers whether the work fits: with a start in
- * hand it already accounts for the hours before work begins.
+ * The grid reads as two parallel pairs — planned work against the planned
+ * window, then the work still to do against the time still available — with
+ * slack, the difference between the second pair, spanning the width beneath
+ * them as the figure they add up to.
  */
 export function Hud({ list, onEditTimes }: HudProps) {
   const planned = list.items.reduce((sum, i) => sum + i.minutes, 0);
@@ -69,6 +71,13 @@ export function Hud({ list, onEditTimes }: HudProps) {
   const start = startsAt(list);
   const span = windowMs(list);
   const usable = availableMs(list, now);
+  /* What is left of the window to spend. Equal to the window until the start
+     goes by, and thereafter counting down to the deadline. Rounded the same
+     way as `remaining`, so available - to do is exactly slack on screen for
+     the whole life of the list. The clamp only bites in the moment between
+     the deadline passing and the list being deleted: time available cannot go
+     negative, whereas slack must, since that is the overrun it reports. */
+  const available = Math.max(0, Math.round(usable / MINUTE));
   const slack = Math.round((usable - remaining * MINUTE) / MINUTE);
 
   const beforeStart = start !== null && now < start;
@@ -113,7 +122,8 @@ export function Hud({ list, onEditTimes }: HudProps) {
         <Stat label="Planned" value={duration(planned)} />
         <Stat label="Window" value={span === null ? '—' : duration(Math.round(span / MINUTE))} />
         <Stat label="To do" value={duration(remaining)} />
-        <Stat label="Slack" value={signedDuration(slack)} tone={over ? 'bad' : undefined} />
+        <Stat label="Available" value={duration(available)} />
+        <Stat label="Slack" value={signedDuration(slack)} tone={over ? 'bad' : undefined} span />
       </div>
 
       <div className="hud-clock">
@@ -143,9 +153,20 @@ export function Hud({ list, onEditTimes }: HudProps) {
   );
 }
 
-function Stat({ label, value, tone }: { label: string; value: string; tone?: 'bad' }) {
+function Stat({
+  label,
+  value,
+  tone,
+  span,
+}: {
+  label: string;
+  value: string;
+  tone?: 'bad';
+  /** Runs the full width, for the figure the rows above add up to. */
+  span?: boolean;
+}) {
   return (
-    <div className="hud-stat" data-tone={tone}>
+    <div className={span ? 'hud-stat span' : 'hud-stat'} data-tone={tone}>
       <span className="hud-stat-label">{label}</span>
       <span className="hud-stat-value">{value}</span>
     </div>
