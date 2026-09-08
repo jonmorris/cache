@@ -75,12 +75,12 @@ export function Hud({ list, onEditTimes }: HudProps) {
   const usable = availableMs(list, now);
   /* What is left of the window to spend. Equal to the window until the start
      goes by, and thereafter counting down to the deadline. Rounded the same
-     way as `remaining`, so available - to do is exactly slack on screen for
+     way as `remaining`, so available - to do is exactly extra on screen for
      the whole life of the list. The clamp only bites in the moment between
      the deadline passing and the list being deleted: time available cannot go
-     negative, whereas slack must, since that is the overrun it reports. */
+     negative, whereas extra must, since that is the overrun it reports. */
   const available = Math.max(0, Math.round(usable / MINUTE));
-  const slack = Math.round((usable - remaining * MINUTE) / MINUTE);
+  const extra = Math.round((usable - remaining * MINUTE) / MINUTE);
 
   const beforeStart = start !== null && now < start;
   const left = dueAt(list) - now;
@@ -88,7 +88,7 @@ export function Hud({ list, onEditTimes }: HudProps) {
   // gone. Over is a forecast: the work no longer fits in what is left. Soon is
   // only a nudge that the deadline is close, which is fine if nothing is open.
   const overdue = left <= 0;
-  const over = !overdue && slack < 0;
+  const over = !overdue && extra < 0;
   const soon = !overdue && !over && left <= 15 * MINUTE;
 
   /* Pressure: how much of the time left is already spoken for. Full means you
@@ -126,7 +126,7 @@ export function Hud({ list, onEditTimes }: HudProps) {
         <Stat label="Planned" value={duration(planned)} />
         <Stat label="Available" value={duration(available)} />
         <Stat label="To do" value={duration(remaining)} />
-        <Stat label="Slack" value={signedDuration(slack)} tone={over ? 'bad' : undefined} />
+        <Stat label="Extra" value={signedDuration(extra)} tone={over ? 'bad' : undefined} />
       </div>
 
       <div className="hud-clock">
@@ -139,7 +139,7 @@ export function Hud({ list, onEditTimes }: HudProps) {
         </span>
       </div>
 
-      {over && <p className="hud-note">Over by {duration(Math.abs(slack))}</p>}
+      {over && <p className="hud-note">Over by {duration(Math.abs(extra))}</p>}
 
       {list.items.length > 0 && (
         <div className="hud-items">

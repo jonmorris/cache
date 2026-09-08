@@ -35,7 +35,7 @@ order — tick the fourth thing first and the fourth segment fills, so the bar
 shows *which* things are done rather than just how many.
 
 Items of **30 minutes or more** take a half step: the box cycles empty, half
-done, done. A half credits half the estimate, so **to do** and **slack** both
+done, done. A half credits half the estimate, so **to do** and **extra** both
 move by half the item, and its progress segment fills halfway.
 Shorter items toggle straight to done. Re-estimating a half-done item below
 thirty minutes drops the half rather than claiming the work is finished.
@@ -75,8 +75,8 @@ which is the one thing the cap has to refuse.
 The HUD holds the whole situation: the two times, four figures, and the clock.
 Work sits in the left column and time in the right. **Planned** against
 **available** is what you took on against the hours you have; **to do** against
-**slack** is what is left of each. On screen, available less to do is exactly
-slack.
+**extra** is what is left of each. On screen, available less to do is exactly
+extra.
 
 The two columns move independently, which is the point of showing both. Ticking
 an item moves **to do** and leaves **available** alone; time passing moves
@@ -91,7 +91,7 @@ wasted cell, and the moments you are most likely to have the app open — settin
 up tomorrow, planning tonight, checking before you start — are precisely the
 ones where they would agree.
 
-Slack going negative turns the panel **terracotta** and says how far over you
+Extra going negative turns the panel **terracotta** and says how far over you
 are — that is the problem state, the work no longer fits. Amber is the lesser
 signal: the deadline is inside fifteen minutes, which matters only if something
 is still open. The bar shows how much of the time left the outstanding work

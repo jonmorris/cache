@@ -105,7 +105,7 @@ export function defaultStart(iso: string, now: number = Date.now()): string {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-/** Signed slack, for a value that is meaningful in both directions. */
+/** Signed duration, for a value that is meaningful in both directions. */
 export function signedDuration(minutes: number): string {
   return (minutes < 0 ? '-' : '+') + duration(Math.abs(minutes));
 }
