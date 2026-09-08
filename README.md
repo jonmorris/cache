@@ -34,13 +34,14 @@ Open the site, then **Share → Add to Home Screen** (iOS) or **Install app**
 
 ## First-time setup
 
-GitHub Pages needs two things that no workflow token can do for you:
+The repository must be **public** for Pages on a free plan — no workflow token
+can change that for you.
 
-1. The repository must be **public** (on a free plan).
-2. **Settings → Pages → Source** must be set to **GitHub Actions**, not
-   "Deploy from a branch".
-
-Miss either one and the deploy job fails at the publish step.
+The Pages source is handled by the workflow: `actions/configure-pages` runs with
+`enablement: true`, which creates the Pages site with source "GitHub Actions" on
+the first run. If that step still fails with `Get Pages site failed ... Not
+Found`, the token was refused and you need **Settings → Pages → Source →
+GitHub Actions** by hand.
 
 ## Deploying
 
