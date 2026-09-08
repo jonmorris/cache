@@ -1,0 +1,27 @@
+{
+  "name": "cache",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A one-list-at-a-time task pad that deletes itself.",
+  "scripts": {
+    "icons": "node scripts/generate-icons.mjs",
+    "predev": "npm run icons",
+    "dev": "vite",
+    "prebuild": "npm run icons",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "^5.9.0",
+    "vite": "^7.1.0"
+  }
+}

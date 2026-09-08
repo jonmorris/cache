@@ -1,0 +1,87 @@
+# Cache
+
+A one-list-at-a-time task pad that deletes itself.
+
+Cache holds exactly one list. You set the day it is for — today, or up to seven
+days out — and at **4:00 AM the morning after that day** the list is deleted,
+finished or not. There is no archive, no history and no streak to protect. The
+landing screen is blank because that is the resting state.
+
+## The rules
+
+| | |
+| --- | --- |
+| Lists at once | 1 |
+| Items per list | up to 7 |
+| Estimate per item | 15 minutes to 2 hours, in 15-minute steps |
+| Day horizon | today to +7 days |
+| Deleted at | 04:00 the morning after the day it was set for |
+| Storage | IndexedDB, on device, no account, no server, no sync |
+
+**Estimated** is the sum of every item and never moves. **Remaining** is the sum
+of the items still open. The progress bar has one equal segment per item, in list
+order — tick the fourth thing first and the fourth segment fills, so the bar
+shows *which* things are done rather than just how many.
+
+Ticked items stay on the list, struck through and faded. A list set for a future
+day is visible and editable, but its items cannot be ticked off until its day
+arrives.
+
+## Install it on your phone
+
+Open the site, then **Share → Add to Home Screen** (iOS) or **Install app**
+(Android). It runs standalone and works with no connection.
+
+## First-time setup
+
+GitHub Pages needs two things that no workflow token can do for you:
+
+1. The repository must be **public** (on a free plan).
+2. **Settings → Pages → Source** must be set to **GitHub Actions**, not
+   "Deploy from a branch".
+
+Miss either one and the deploy job fails at the publish step.
+
+## Deploying
+
+Every push to the default branch runs `.github/workflows/deploy.yml`, which
+builds and publishes to Pages. The site lives at
+`https://<user>.github.io/cache/`; `base` in `vite.config.ts` must match that
+repository name.
+
+## Backups
+
+Local-only data dies with a cleared cache. **Settings → Export JSON** writes the
+current list and preferences to a file; **Import JSON** replaces what is on the
+device with a backup, after a confirmation. Imported files are re-validated
+field by field rather than trusted.
+
+## Development
+
+```sh
+npm install
+npm run dev        # generates icons, then serves on :5173
+npm run build      # typecheck + production build into dist/
+npm run preview    # serve the built app
+npm run typecheck
+```
+
+## Notes for future me
+
+**Bottom sheets render through a React portal on `document.body`.** iOS treats a
+touch-scrolling container as a containing block for `position: fixed`, so a sheet
+mounted inside a scrolling screen gets clipped by it and ends up behind the tab
+bar. See `src/components/Sheet.tsx`.
+
+**The icon set is generated, not committed.** `scripts/generate-icons.mjs` is a
+hand-rolled PNG encoder over `node:zlib` — no image library — and runs from
+`predev`/`prebuild`. `public/icons/` is gitignored.
+
+**The service worker serves hashed assets cache-first and navigations
+network-first**, falling back to the cached shell. Bump `VERSION` in
+`public/sw.js` to force old caches out.
+
+## Stack
+
+React 19, Vite 7, TypeScript. No UI framework, no state library, no date library
+— two runtime dependencies in total.
