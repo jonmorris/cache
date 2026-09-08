@@ -98,7 +98,7 @@ export function ItemSheet({
 
         <div className="field">
           <span className="field-label">Kind</span>
-          <div className="segmented" role="radiogroup" aria-label="Kind of item">
+          <div className="kind-pick" role="radiogroup" aria-label="Kind of item">
             {KINDS.map((k) => (
               <button
                 key={k.value}
@@ -106,7 +106,7 @@ export function ItemSheet({
                 role="radio"
                 aria-checked={kind === k.value}
                 disabled={barred(k.value)}
-                className="segmented-opt"
+                className="kind-opt"
                 onClick={() => setKind(k.value)}
               >
                 {k.label}

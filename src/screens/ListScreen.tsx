@@ -6,7 +6,7 @@ import { ItemList } from '../components/ItemList';
 import { ItemSheet } from '../components/ItemSheet';
 import { ScheduleSheet } from '../components/ScheduleSheet';
 import { MAX_ITEMS, tasksFull, type Item, type Kind, type List } from '../types';
-import { dayLabel, deadlineLabel, isPending, pickerName } from '../time';
+import { dayLabel, deadlineLabel, isPending } from '../time';
 
 interface ListScreenProps {
   /** The list for the day being viewed, if there is one. */
@@ -56,13 +56,6 @@ export function ListScreen(props: ListScreenProps) {
         </div>
       ) : (
         <>
-          {locked && (
-            <p className="banner">
-              <span className="banner-key">Locked</span>
-              <span>· Opens {pickerName(list.date, now)}</span>
-            </p>
-          )}
-
           <Hud list={list} onEditTimes={() => setScheduling(true)} />
 
           {list.items.length === 0 ? (

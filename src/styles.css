@@ -298,23 +298,6 @@ ul {
   color: var(--accent-ink);
 }
 
-.banner {
-  display: flex;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 1px dashed var(--rule-strong);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--dim);
-  background: var(--accent-soft);
-}
-
-.banner .banner-key {
-  color: var(--ink);
-  font-weight: 700;
-}
-
 /* ---------- HUD ----------
    Clock times and durations are separated on purpose: they read at different
    widths, and mixing them in one right-aligned column is what made the old
@@ -1097,13 +1080,16 @@ ul {
   color: var(--faint);
 }
 
-.segmented {
+/* Its own class, not `.segmented`: that one is the three-way theme picker in
+   Settings, and a second definition of it here silently re-laid that control
+   out in two columns. */
+.kind-pick {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
 }
 
-.segmented-opt {
+.kind-opt {
   min-height: var(--tap);
   border: 1px solid var(--rule-strong);
   font-size: 12px;
@@ -1112,14 +1098,14 @@ ul {
   color: var(--dim);
 }
 
-.segmented-opt[aria-checked='true'] {
+.kind-opt[aria-checked='true'] {
   border-color: var(--accent);
   background: var(--accent);
-  color: var(--bg);
+  color: var(--accent-ink);
   font-weight: 700;
 }
 
-.segmented-opt:disabled {
+.kind-opt:disabled {
   color: var(--faint);
   border-style: dotted;
 }
