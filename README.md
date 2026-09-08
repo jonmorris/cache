@@ -3,8 +3,7 @@
 A one-list-at-a-time task pad that deletes itself.
 
 Cache holds one list per day, across today and the seven days after it. Each
-gets a start and a deadline on its own day — the window its estimates have to
-fit into — and is destroyed at that deadline, finished or not. There is no
+gets a deadline on its own day and is destroyed at it, finished or not. There is no
 archive, no history and no streak to protect. A day with nothing on it is blank,
 because that is the resting state.
 
@@ -20,7 +19,8 @@ walking there.
 | Items per list | up to 7 |
 | Estimate per item | 15 minutes to 2 hours, in 15-minute steps |
 | Day horizon | today to +7 days |
-| Start and deadline | any two times on that day, both required |
+| Deadline | any time on that day, required |
+| Start | derived, never asked for |
 | Destroyed at | its deadline, to the second |
 | Storage | IndexedDB, on device, no account, no server, no sync |
 
@@ -35,22 +35,21 @@ telling the truth. (Arrow keys work on a focused grip too.) A list set for a
 future day is visible and editable, but its items cannot be ticked off until its
 day arrives.
 
-The HUD holds the whole situation: the window, how far through it you are,
-four figures, and the clock. **Planned** is every item; **to do** is what is
-still open; **window** is deadline minus start; **slack** is the usable time
-left minus the work left. Slack going negative turns the panel amber and says
-how far over you are; inside the last fifteen minutes it turns red.
-
-Before the start the clock reads **starts in** and counts to it, then flips to
-**time left** counting to the deadline. Usable time is bounded below by the
-start, so hours before you begin are never counted as hours you can spend.
+The HUD holds the whole situation: the deadline, four figures, and the clock.
+**Planned** is every item; **to do** is what is still open; **start by** is the
+latest you can begin and still finish, which is the deadline less the work left
+— derived rather than asked for, and moving later as you tick things off;
+**slack** is the time left minus the work left. Slack going negative turns the
+panel amber and says how far over you are; inside the last fifteen minutes it
+turns red. The bar shows how much of the time left the outstanding work already
+claims: full means you are at the last moment you could start.
 
 Clock times are 24-hour and durations are tabular, each in their own part of the
 panel — mixing them in one right-aligned column is what made an earlier version
 shift about whenever a value changed shape.
 
-Lists written before start times and deadlines existed keep the old
-04:00-next-morning rule until you give them their own. Those are the only lists
+Lists written before deadlines existed keep the old 04:00-next-morning rule
+until you give them one. Those are the only lists
 that can outlive their day; because the navigator spans today onwards, such a
 list is off-screen for the few hours between midnight and 04:00, though it is
 still in storage until it is deleted.

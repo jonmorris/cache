@@ -36,7 +36,6 @@ function open(): Promise<IDBDatabase> {
           if (typeof record?.date !== 'string') continue;
           days.put({
             date: record.date,
-            start: record.start ?? null,
             deadline: record.deadline ?? null,
             createdAt: record.createdAt ?? Date.now(),
             items: Array.isArray(record.items) ? record.items : [],

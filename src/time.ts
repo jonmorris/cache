@@ -1,7 +1,7 @@
 import type { List } from './types';
 
 /** The scheduling half of a list — all the date maths needs. */
-type Schedule = Pick<List, 'date' | 'start' | 'deadline'>;
+type Schedule = Pick<List, 'date' | 'deadline'>;
 
 /**
  * Fallback for lists written before deadlines existed: 04:00 on the morning
@@ -66,24 +66,28 @@ export function isExpired(list: Schedule, now: number = Date.now()): boolean {
   return now >= expiresAt(list);
 }
 
-/** Epoch ms when work is due to begin, or null on records with no start. */
-export function startsAt(list: Schedule): number | null {
-  return list.start ? timeOn(list.date, list.start) : null;
-}
-
-/** The whole planned window, deadline minus start. */
-export function windowMs(list: Schedule): number | null {
-  const start = startsAt(list);
-  return start === null ? null : expiresAt(list) - start;
+/** Time between now and the deadline — all of it is usable. */
+export function availableMs(list: Schedule, now: number): number {
+  return expiresAt(list) - now;
 }
 
 /**
- * Time actually usable between now and the deadline. Bounded below by the
- * start: hours before you begin are not hours you can spend.
+ * The latest moment work can begin and still finish: the deadline less the
+ * work still open. Derived rather than asked for — setting a deadline is the
+ * only decision, and this moves later as items are ticked off.
  */
-export function availableMs(list: Schedule, now: number): number {
-  const start = startsAt(list);
-  return expiresAt(list) - Math.max(now, start ?? now);
+export function startBy(list: Schedule, remainingMinutes: number): number {
+  return expiresAt(list) - remainingMinutes * 60_000;
+}
+
+/**
+ * "15:15", or "-1d 22:00" when the work no longer fits inside the day at all.
+ */
+export function startByLabel(list: Schedule, remainingMinutes: number): string {
+  const at = new Date(startBy(list, remainingMinutes));
+  const clock = `${pad(at.getHours())}:${pad(at.getMinutes())}`;
+  const dayShift = daysFromToday(toISODate(at)) - daysFromToday(list.date);
+  return dayShift < 0 ? `${dayShift}d ${clock}` : clock;
 }
 
 /** Signed slack, for a value that is meaningful in both directions. */
@@ -94,14 +98,6 @@ export function signedDuration(minutes: number): string {
 /** What the HUD shows as the moment of destruction, 24-hour. */
 export function deadlineLabel(list: Schedule): string {
   return list.deadline ?? expiryLabel(list);
-}
-
-/** Work begins at the quarter hour you are already in, or 09:00 on a later day. */
-export function defaultStart(iso: string, now: number = Date.now()): string {
-  if (iso !== todayISO(now)) return '09:00';
-  const d = new Date(now);
-  d.setMinutes(Math.floor(d.getMinutes() / 15) * 15, 0, 0);
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 /** Time remaining as a ticking clock: "04:12:38", or "2d 04:12:38" beyond a day. */

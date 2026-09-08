@@ -4,10 +4,8 @@ import {
   countdown,
   deadlineLabel,
   duration,
-  expiresAt,
   signedDuration,
-  startsAt,
-  windowMs,
+  startByLabel,
 } from '../time';
 import { Progress } from './Progress';
 import { MAX_ITEMS, type List } from '../types';
@@ -58,66 +56,48 @@ export function Hud({ list, onEditTimes }: HudProps) {
     };
   }, []);
 
-  const start = startsAt(list);
-  const span = windowMs(list);
-  const available = availableMs(list, now);
-  const slack = Math.round((available - remaining * MINUTE) / MINUTE);
-
-  const beforeStart = start !== null && now < start;
-  const left = expiresAt(list) - now;
+  const left = availableMs(list, now);
+  const slack = Math.round((left - remaining * MINUTE) / MINUTE);
   const soon = left <= 15 * MINUTE;
   const over = slack < 0;
 
-  /* How far through the window we are; nothing to show before it opens. */
-  const elapsed = span && span > 0 ? Math.min(1, Math.max(0, (now - (start ?? now)) / span)) : 0;
+  /* Pressure: how much of the time left is already spoken for. Full means you
+     are at the last moment you could start; past full, you are behind. */
+  const committed = left > 0 ? Math.min(1, (remaining * MINUTE) / left) : 1;
 
   return (
     <section className="hud" data-state={soon ? 'soon' : over ? 'over' : 'ok'}>
-      <button className="hud-window" onClick={onEditTimes} aria-label="Change start and deadline">
-        {list.start ? (
-          <>
-            <span className="hud-time">{list.start}</span>
-            <span className="hud-arrow" aria-hidden="true">
-              →
-            </span>
-            <span className="hud-time">{deadlineLabel(list)}</span>
-          </>
-        ) : (
-          <>
-            <span className="hud-arrow" aria-hidden="true">
-              →
-            </span>
-            <span className="hud-time">{deadlineLabel(list)}</span>
-          </>
-        )}
+      <button className="hud-window" onClick={onEditTimes} aria-label="Change the deadline">
+        <span className="hud-label">Due</span>
+        <span className="hud-time">{deadlineLabel(list)}</span>
         <span className="hud-window-edit" aria-hidden="true">
           Edit
         </span>
       </button>
 
-      {span !== null && (
-        <div
-          className="hud-bar"
-          role="img"
-          aria-label={`${Math.round(elapsed * 100)}% through the window`}
-        >
-          <span className="hud-bar-fill" style={{ width: `${elapsed * 100}%` }} />
-        </div>
-      )}
+      <div
+        className="hud-bar"
+        role="img"
+        aria-label={`${Math.round(committed * 100)}% of the time left is committed`}
+      >
+        <span className="hud-bar-fill" style={{ width: `${committed * 100}%` }} />
+      </div>
 
       <div className="hud-stats">
         <Stat label="Planned" value={duration(planned)} />
-        <Stat label="Window" value={span === null ? '—' : duration(Math.round(span / MINUTE))} />
+        <Stat
+          label="Start by"
+          value={startByLabel(list, remaining)}
+          tone={over ? 'warn' : undefined}
+        />
         <Stat label="To do" value={duration(remaining)} />
         <Stat label="Slack" value={signedDuration(slack)} tone={over ? 'warn' : undefined} />
       </div>
 
       <div className="hud-clock">
-        <span className="hud-clock-label">{beforeStart ? 'Starts in' : 'Time left'}</span>
+        <span className="hud-clock-label">Time left</span>
         <span className="hud-clock-dots" aria-hidden="true" />
-        <span className="hud-clock-value">
-          {countdown(beforeStart ? (start as number) - now : left)}
-        </span>
+        <span className="hud-clock-value">{countdown(left)}</span>
       </div>
 
       {over && <p className="hud-note">Over by {duration(Math.abs(slack))}</p>}
