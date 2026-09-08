@@ -35,10 +35,9 @@ export function App() {
       .finally(() => setReady(true));
   }, []);
 
-  /* Clock. Everything time-dependent is derived from `now` — the countdown
-     ticks, a list goes from pending to live, and it expires, all while the app
-     sits open. Paused when hidden so a backgrounded tab is not waking each
-     second. */
+  /* Screen-level clock: day rollover, pending -> live, expiry. Coarse on
+     purpose — the second hand belongs to <Countdown>, so the whole tree is not
+     re-rendering underneath an open sheet once a second. Paused when hidden. */
   useEffect(() => {
     let timer: number | undefined;
     const bump = () => setNow(Date.now());
@@ -50,7 +49,7 @@ export function App() {
       stop();
       if (document.visibilityState !== 'visible') return;
       bump();
-      timer = window.setInterval(bump, 1000);
+      timer = window.setInterval(bump, 10_000);
     };
     sync();
     document.addEventListener('visibilitychange', sync);
@@ -61,6 +60,15 @@ export function App() {
       window.removeEventListener('focus', bump);
     };
   }, []);
+
+  /* Land on the deadline itself rather than up to a poll late. */
+  useEffect(() => {
+    if (!list) return;
+    const delay = expiresAt(list) - Date.now();
+    if (delay <= 0 || delay > 2_147_483_000) return;
+    const timer = setTimeout(() => setNow(Date.now()), delay + 200);
+    return () => clearTimeout(timer);
+  }, [list]);
 
   /* The whole point of the app: the list deletes itself, finished or not. */
   useEffect(() => {

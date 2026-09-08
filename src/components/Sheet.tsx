@@ -42,18 +42,34 @@ export function Sheet({ open, title, onClose, children, footer }: SheetProps) {
     return () => document.body.classList.remove('no-scroll');
   }, [mounted]);
 
+  /*
+   * Callers pass inline arrows for onClose, so its identity changes on every
+   * render of the screen behind the sheet. Keeping it in a ref keeps it out of
+   * the dependency lists below: focus must move exactly once, when the sheet
+   * opens or closes. Re-running it on each render pulled focus off whatever the
+   * user was typing in and dismissed the keyboard on iOS.
+   */
+  const latestClose = useRef(onClose);
+  useEffect(() => {
+    latestClose.current = onClose;
+  });
+
   useEffect(() => {
     if (!open) {
       restoreFocus.current?.focus?.();
       return;
     }
     panel.current?.focus();
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') latestClose.current();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  }, [open]);
 
   if (!mounted) return null;
 

@@ -105,7 +105,7 @@ export function ListScreen(props: ListScreenProps) {
           </div>
         </div>
 
-        <Countdown list={list} now={now} remaining={left} compare={!locked} />
+        <Countdown list={list} remaining={left} compare={!locked} />
 
         {list.items.length > 0 && (
           <div>
