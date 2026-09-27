@@ -4,6 +4,7 @@ import {
   MAX_ITEMS,
   readKind,
   readProgress,
+  readTimer,
   type Backup,
   type Item,
   type List,
@@ -83,6 +84,7 @@ export function parseBackup(text: string): Backup {
         minutes: nearestDuration(it.minutes),
         progress: readProgress(it, nearestDuration(it.minutes)),
         kind: readKind(it),
+        ...readTimer(it),
         createdAt: typeof it.createdAt === 'number' ? it.createdAt : Date.now(),
       }))
       .filter((it) => it.kind === 'transit' || ++tasks <= MAX_ITEMS);

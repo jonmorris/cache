@@ -20,6 +20,7 @@ interface ListScreenProps {
   onAddItem: (name: string, minutes: number, kind: Kind) => void;
   onSaveItem: (id: string, name: string, minutes: number, kind: Kind) => void;
   onToggleItem: (id: string) => void;
+  onTimerItem: (id: string) => void;
   onDeleteItem: (id: string) => void;
   onReorder: (from: number, to: number) => void;
 }
@@ -79,6 +80,7 @@ export function ListScreen(props: ListScreenProps) {
               lockTicking={locked}
               onReorder={props.onReorder}
               onToggle={props.onToggleItem}
+              onTimer={props.onTimerItem}
               onEdit={(item) => setItemSheet({ mode: 'edit', item })}
               onDelete={setPendingDelete}
             />

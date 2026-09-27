@@ -15,6 +15,10 @@ export interface Item {
   minutes: number;
   progress: Progress;
   kind: Kind;
+  /** Milliseconds timed on the item across finished runs. */
+  elapsed: number;
+  /** Epoch ms the running timer was started, or null when it is stopped. */
+  startedAt: number | null;
   createdAt: number;
 }
 
@@ -28,11 +32,48 @@ export const HALF_MIN = 30;
 
 export const canHalve = (minutes: number) => minutes >= HALF_MIN;
 
-/** Tapping cycles: long items through a half step, short ones straight to done. */
-export function nextProgress(item: Pick<Item, 'minutes' | 'progress'>): Progress {
-  if (!canHalve(item.minutes)) return item.progress === 1 ? 0 : 1;
-  if (item.progress === 0) return 0.5;
-  return item.progress === 0.5 ? 1 : 0;
+type Timed = Pick<Item, 'minutes' | 'progress' | 'elapsed' | 'startedAt'>;
+
+/** Time spent on the item so far, including a run still going. */
+export const elapsedMs = (item: Pick<Item, 'elapsed' | 'startedAt'>, now: number) =>
+  item.elapsed + (item.startedAt === null ? 0 : Math.max(0, now - item.startedAt));
+
+/**
+ * How much of the item counts as done, 0 to 1: the tick where it says more,
+ * otherwise the timer's share of the estimate. Time alone can reach 1 — the
+ * estimate is spent — but only the final tick marks an item done, since a
+ * timer left running is not proof the work is finished.
+ */
+export function fraction(item: Timed, now: number): number {
+  if (item.progress === 1) return 1;
+  return Math.max(item.progress, Math.min(1, elapsedMs(item, now) / (item.minutes * 60_000)));
+}
+
+/** What the box shows: done only when ticked, half once the timer or a tap says so. */
+export function shownProgress(item: Timed, now: number): Progress {
+  if (item.progress === 1) return 1;
+  return fraction(item, now) >= 0.5 ? 0.5 : 0;
+}
+
+/**
+ * Tapping cycles: long items through a half step, short ones straight to done.
+ * Once the box already shows half — tapped or timed there — the next tap
+ * finishes the item. Unticking a done item clears it back to empty.
+ */
+export function nextProgress(item: Timed, now: number): Progress {
+  if (item.progress === 1) return 0;
+  if (shownProgress(item, now) === 0.5 || !canHalve(item.minutes)) return 1;
+  return 0.5;
+}
+
+/** Reads the timer off a stored or imported item; anything malformed is a stopped, empty one. */
+export function readTimer(raw: Record<string, unknown>): Pick<Item, 'elapsed' | 'startedAt'> {
+  const elapsed = raw.elapsed;
+  const startedAt = raw.startedAt;
+  return {
+    elapsed: typeof elapsed === 'number' && Number.isFinite(elapsed) && elapsed > 0 ? elapsed : 0,
+    startedAt: typeof startedAt === 'number' && Number.isFinite(startedAt) ? startedAt : null,
+  };
 }
 
 /**

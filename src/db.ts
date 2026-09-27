@@ -2,6 +2,7 @@ import {
   DEFAULT_SETTINGS,
   readKind,
   readProgress,
+  readTimer,
   type Item,
   type List,
   type Settings,
@@ -82,6 +83,7 @@ const readItem = (raw: Item & { done?: boolean }): Item => ({
   minutes: raw.minutes,
   progress: readProgress(raw as unknown as Record<string, unknown>, raw.minutes),
   kind: readKind(raw as unknown as Record<string, unknown>),
+  ...readTimer(raw as unknown as Record<string, unknown>),
   createdAt: raw.createdAt,
 });
 
