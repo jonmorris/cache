@@ -21,7 +21,7 @@ walking there.
 | Tasks per list | up to 7 |
 | Transit legs | uncapped — they do not spend a slot |
 | Estimate per item | 5 or 10 minutes, then quarter-hours to 2 hours |
-| Half done | available on items of 30 minutes or more |
+| Half done | available on items of 30 minutes or more, or any timed past halfway |
 | Day horizon | today to +7 days |
 | Start | any time before the deadline, prefilled |
 | Deadline | any time on that day, required |
@@ -39,6 +39,25 @@ done, done. A half credits half the estimate, so **to do** and **extra** both
 move by half the item, and its progress segment fills halfway.
 Shorter items toggle straight to done. Re-estimating a half-done item below
 thirty minutes drops the half rather than claiming the work is finished.
+
+## Timing an item
+
+The **▶** on a row starts a timer; **❚❚** stops it where it stands, and starting
+again picks up from there. One item is timed at a time — starting another stops
+the first. Timers are stored with the list, so one keeps running with the app
+closed.
+
+A running timer credits its share of the estimate as it goes: an hour into a
+two-hour job, **to do** is down by an hour and its progress segment is half
+full, rather than waiting on the next tick. That is what keeps a long job
+three-quarters through from reading as though none of it had happened.
+
+Once the timer passes halfway the box shows **half done** by itself, and the
+next tap finishes the item instead of stepping to half again. Reaching the
+estimate does *not* tick it off — work runs long, and timers get forgotten — so
+the final tick is always yours. The row reads time spent against the estimate,
+`2:16/2:00`, so an overrun is visible. Ticking done stops the timer; unticking
+a done item clears it back to empty, timer included.
 
 Ticked items stay on the list, struck through and faded. Drag a row by its grip
 to reorder it — the progress segments travel with their items, so the bar keeps

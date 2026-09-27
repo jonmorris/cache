@@ -7,6 +7,7 @@ import { addDays, dueAt, expiresAt, todayISO } from './time';
 import {
   canHalve,
   DEFAULT_SETTINGS,
+  elapsedMs,
   MAX_DAYS_AHEAD,
   nextProgress,
   tasksFull,
@@ -171,6 +172,8 @@ export function App() {
       minutes,
       progress: 0,
       kind,
+      elapsed: 0,
+      startedAt: null,
       createdAt: Date.now(),
     };
     update(cursor, (current) =>
@@ -206,10 +209,33 @@ export function App() {
       ),
     );
 
+  /** Folds a running timer into its total, leaving it stopped where it stands. */
+  const stopTimer = (i: Item, now: number): Item =>
+    i.startedAt === null ? i : { ...i, elapsed: elapsedMs(i, now), startedAt: null };
+
   const onToggleItem = (id: string) =>
-    update(cursor, (current) =>
-      mapItems(current, (i) => (i.id === id ? { ...i, progress: nextProgress(i) } : i)),
-    );
+    update(cursor, (current) => {
+      const now = Date.now();
+      return mapItems(current, (i) => {
+        if (i.id !== id) return i;
+        const progress = nextProgress(i, now);
+        // Done stops the clock; unticking clears it too, or the timed half
+        // would put the box straight back to half and it could never empty.
+        if (progress === 1) return { ...stopTimer(i, now), progress };
+        if (progress === 0) return { ...i, progress, elapsed: 0, startedAt: null };
+        return { ...i, progress };
+      });
+    });
+
+  /** One thing is timed at a time: starting an item stops whichever was running. */
+  const onTimerItem = (id: string) =>
+    update(cursor, (current) => {
+      const now = Date.now();
+      return mapItems(current, (i) => {
+        if (i.id !== id) return stopTimer(i, now);
+        return i.startedAt === null ? { ...i, startedAt: now } : stopTimer(i, now);
+      });
+    });
 
   const onDeleteItem = (id: string) =>
     update(cursor, (current) => ({ ...current, items: current.items.filter((i) => i.id !== id) }));
@@ -243,6 +269,7 @@ export function App() {
             onAddItem={onAddItem}
             onSaveItem={onSaveItem}
             onToggleItem={onToggleItem}
+            onTimerItem={onTimerItem}
             onDeleteItem={onDeleteItem}
             onReorder={onReorder}
           />

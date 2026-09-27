@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import {
   availableMs,
   countdown,
@@ -9,7 +8,8 @@ import {
   startsAt,
 } from '../time';
 import { Progress } from './Progress';
-import { MAX_ITEMS, taskCount, type List } from '../types';
+import { fraction, MAX_ITEMS, shownProgress, taskCount, type List } from '../types';
+import { useNow } from '../useNow';
 
 interface HudProps {
   list: List;
@@ -34,13 +34,6 @@ const MINUTE = 60_000;
  */
 export function Hud({ list, onEditTimes }: HudProps) {
   const planned = list.items.reduce((sum, i) => sum + i.minutes, 0);
-  // Rounded once over the whole sum: halving an odd estimate (0:45, 1:15,
-  // 1:45) leaves a half minute that should not compound across items.
-  const remaining = Math.round(
-    list.items.reduce((sum, i) => sum + i.minutes * (1 - i.progress), 0),
-  );
-  const done = list.items.filter((i) => i.progress === 1).length;
-  const half = list.items.filter((i) => i.progress === 0.5).length;
   // Only tasks are capped, so the tally counts them and notes transit beside it.
   const tasks = taskCount(list.items);
   const transit = list.items.length - tasks;
@@ -50,26 +43,16 @@ export function Hud({ list, onEditTimes }: HudProps) {
    * every second, so a ticking clock does not re-render the whole screen (and
    * every open sheet) underneath the user.
    */
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    let timer: number | undefined;
-    const stop = () => {
-      if (timer !== undefined) clearInterval(timer);
-      timer = undefined;
-    };
-    const sync = () => {
-      stop();
-      if (document.visibilityState !== 'visible') return;
-      setNow(Date.now());
-      timer = window.setInterval(() => setNow(Date.now()), 1000);
-    };
-    sync();
-    document.addEventListener('visibilitychange', sync);
-    return () => {
-      stop();
-      document.removeEventListener('visibilitychange', sync);
-    };
-  }, []);
+  const now = useNow();
+
+  // A running timer wears `to do` down as it goes rather than in half-item
+  // jumps. Rounded once over the whole sum, so part-minutes from halves and
+  // timers do not compound across items.
+  const remaining = Math.round(
+    list.items.reduce((sum, i) => sum + i.minutes * (1 - fraction(i, now)), 0),
+  );
+  const done = list.items.filter((i) => i.progress === 1).length;
+  const half = list.items.filter((i) => shownProgress(i, now) === 0.5).length;
 
   const start = startsAt(list);
   const usable = availableMs(list, now);
@@ -143,7 +126,7 @@ export function Hud({ list, onEditTimes }: HudProps) {
 
       {list.items.length > 0 && (
         <div className="hud-items">
-          <Progress items={list.items} />
+          <Progress items={list.items} now={now} />
           <p className="hud-counts">
             <span>
               {done}/{list.items.length} done{half > 0 ? ` · ${half} half` : ''}
