@@ -62,3 +62,18 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+---
+
+## Running records
+
+`docs/DECISION-LOG.md` and `docs/CASE-STUDY.md` are repo-only indexes over the
+other docs (README, commit messages, `docs/DECISIONS.md`). They are never built
+or shipped.
+
+- When a change makes a decision, add a decision-log entry in the same commit.
+  When it is worth telling, amend a case-study module and its *Log of
+  additions* in the same commit.
+- A decision-log entry is always a new file in `docs/decision-log/`
+  (`YYYY-MM-DD-short-name.md`, one table row), never an edit to the table.
+  `npm test` validates it.

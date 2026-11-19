@@ -32,6 +32,9 @@ jobs:
 
       - run: npm ci
 
+      # Checks the repo-only records, such as a malformed decision-log entry.
+      - run: npm test
+
       - run: npm run build
 
       # No enablement: true here. The Pages site has to already exist —
